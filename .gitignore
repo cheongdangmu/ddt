@@ -1,0 +1,41 @@
+# ========================
+# 1. 의존성
+# ========================
+node_modules
+.pnp
+.pnp.js
+
+# ========================
+# 2. 빌드 결과물 & 캐시
+# ========================
+dist
+build
+.next
+out
+.turbo
+.cache
+
+# ========================
+# 3. 환경 변수
+# ========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ========================
+# 4. 로그 파일
+# ========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ========================
+# 5. OS 및 에디터 설정
+# ========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
