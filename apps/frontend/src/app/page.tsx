@@ -1,39 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 export default function Home() {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [message, setMessage] = useState<string>('서버 연결 대기 중...');
+  const socketRef = useRef<Socket | null>(null);
+  const [message, setMessage] = useState('서버 연결 대기 중...');
 
   useEffect(() => {
-    // 1. 백엔드(8080 포트)로 소켓 연결 시도
-    const newSocket = io('http://localhost:8080');
-    setSocket(newSocket);
+    // 1. 소켓 연결
+    socketRef.current = io('http://localhost:8080');
 
-    // 2. 서버에서 'welcome' 메시지가 오면 화면 업데이트
-    newSocket.on('welcome', (data) => {
-      console.log(data);
-      setMessage(data.message);
-    });
+    // 2. 이벤트 리스너 등록 
+    socketRef.current.on('welcome', (data) => setMessage(data.message));
+    socketRef.current.on('pong', (data) => alert(data));
 
-    // 3. 서버에서 'pong' 답장이 오면 알림창 띄우기
-    newSocket.on('pong', (data) => {
-      alert(data);
-    });
-
-    // 컴포넌트가 꺼질 때 소켓 닫기
+    // 3. 컴포넌트 언마운트 시 소켓 닫기
     return () => {
-      newSocket.disconnect();
+      socketRef.current?.disconnect();
     };
   }, []);
 
   const sendPing = () => {
-    if (socket) {
-      // 서버로 'ping' 이벤트 쏘기
-      socket.emit('ping', '프론트가 찌릅니다!'); 
-    }
+    socketRef.current?.emit('ping', '프론트가 찌릅니다!'); 
   };
 
   return (
