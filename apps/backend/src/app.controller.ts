@@ -9,4 +9,9 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('sentry-test')
+  testSentry() {
+    throw new Error('🔥 백엔드 Sentry 연동 테스트 에러입니다!');
+  }
 }

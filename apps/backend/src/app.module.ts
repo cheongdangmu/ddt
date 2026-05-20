@@ -6,9 +6,24 @@ import { RoomModule } from './modules/room/room.module';
 import { UserModule } from './modules/user/user.module';
 import { TimerModule } from './modules/timer/timer.module';
 
+import { SentryModule, SentryGlobalFilter } from '@sentry/nestjs/setup';
+import { APP_FILTER } from '@nestjs/core';
+
 @Module({
-  imports: [RoomModule, UserModule, TimerModule],
+  imports: [
+    RoomModule, 
+    UserModule, 
+    TimerModule,
+    SentryModule.forRoot(),
+  ],
   controllers: [AppController],
-  providers: [AppService, SocketGateway],
+  providers: [
+    AppService, 
+    SocketGateway,
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+  ],
 })
 export class AppModule {}
