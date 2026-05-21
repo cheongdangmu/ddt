@@ -21,20 +21,16 @@ const TermsPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    // 팝업을 닫지 않고 그 위에 구글 로그인창을 새로 띄우거나,
-    // 현재 팝업 위치를 구글 로그인 URL로 변경합니다.
     window.location.href = '/auth/google';
   };
 
   return (
     <CenterLayout maxWidthClass='md:max-w-md'>
-      {/* 헤더 */}
       <div className='w-full flex items-center mb-10'>
         <button className='text-white' onClick={() => window.close()}>X</button>
         <h1 className='flex-1 text-center font-bold'>약관 동의</h1>
       </div>
 
-      {/* 타이틀 */}
       <div className='text-center mb-10'>
         <div className='flex justify-center mb-10 md:mb-14'>
           <Image
@@ -52,9 +48,7 @@ const TermsPage = () => {
         </p>
       </div>
 
-      {/* 약관 리스트 */}
       <div className='flex flex-col gap-3 w-full mb-10'>
-        {/* 전체 동의 */}
         <div className='flex items-center p-4 bg-white/5 rounded-xl border border-white/10'>
           <Checkbox
             id='all'
@@ -66,7 +60,6 @@ const TermsPage = () => {
           </label>
         </div>
 
-        {/* 개별 동의 */}
         <div className='flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10'>
           <div className='flex items-center'>
             <Checkbox
@@ -110,7 +103,6 @@ const TermsPage = () => {
         </div>
       </div>
 
-      {/* 구글 로그인 버튼 */}
       <Button
         className='w-full h-14 bg-[#5F63F2] hover:bg-[#5F63F2]/90 text-lg font-semibold'
         disabled={!allChecked}
@@ -119,7 +111,6 @@ const TermsPage = () => {
         <span className='mr-2'>G</span> Google로 계속하기
       </Button>
 
-      {/* 하단 보안 문구 */}
       <p className='text-center text-xs text-gray-500 mt-6 flex items-center justify-center gap-1'>
         🔒 안전한 보안 환경에서 로그인 진행 중
       </p>

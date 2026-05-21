@@ -37,10 +37,6 @@ const RoomPage = () => {
 
   return (
     <CenterLayout>
-      {/* 
-        p-4 sm:p-6 에서 sm:을 제거하고 그냥 고정 패딩 p-5 정도로 통일하거나,
-        모바일 p-4에서 PC 화면 md:p-6으로 바로 넘어가도록 깔끔하게 정리했습니다.
-      */}
       <div className='absolute top-0 right-0 p-4 md:p-6'>
         {isLoggedIn ? (
           <Button variant='outline' asChild>
@@ -53,11 +49,6 @@ const RoomPage = () => {
         )}
       </div>
 
-      {/* 
-        [수정 포인트]
-        - sm:pt-0을 지우고 md:pt-0으로 변경했습니다. 
-        - 모바일(pt-16) -> 데스크톱(md:pt-0) 구조가 되어 코드가 훨씬 명확해집니다.
-      */}
       <div className='text-left space-y-4 pt-16 md:pt-0 md:text-center md:flex md:flex-col md:items-center'>
         <div className='mb-10 md:mb-14'>
           <Image
@@ -82,10 +73,6 @@ const RoomPage = () => {
         </p>
       </div>
 
-      {/* 
-        sm:flex-row는 '모바일(세로) -> 태블릿/PC(가로)' 흐름을 만들어 주므로 유지하되, 
-        동작 단계를 맞추기 위해 md:flex-row로 통일해도 좋습니다. 여기서는 디자인에 맞춰 md:로 통일했습니다.
-      */}
       <div className='flex flex-col md:flex-row gap-3 items-center justify-center w-full max-w-xs mx-auto md:max-w-md'>
         <Button variant='default' size='main' className='w-full'>
           <Lock className='mr-2 h-4 w-4' /> 방 만들기
