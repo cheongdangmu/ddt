@@ -9,8 +9,11 @@ import { TimerModule } from './modules/timer/timer.module';
 import { SentryModule, SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { APP_FILTER } from '@nestjs/core';
 
+import { PrismaModule } from './common/prisma.module';
+
 @Module({
   imports: [
+    PrismaModule, 
     RoomModule, 
     UserModule, 
     TimerModule,
