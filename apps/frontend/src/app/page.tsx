@@ -1,14 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Lock, Timer, Gavel } from 'lucide-react';
 import Image from 'next/image';
 import { TextIcon } from '@/components/features/textIcon';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { CenterLayout } from '@/components/layout/centerLayout';
-import TermsPage from './terms/page';
 
 const RoomPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -18,6 +16,25 @@ const RoomPage = () => {
     );
   });
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === 'login-success') {
+        setIsLoggedIn(true);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const handleOpenTerms = () => {
+    window.open(
+      '/terms',
+      'Terms Agreement',
+      'width=400,height=730,resizable=no,status=no,toolbar=no,menubar=no, location=no',
+    );
+  };
+
   return (
     <CenterLayout>
       <div className='absolute top-0 right-0 p-4 md:p-6'>
@@ -26,14 +43,9 @@ const RoomPage = () => {
             <Link href='/mypage'>마이페이지</Link>
           </Button>
         ) : (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant='outline'>로그인</Button>
-            </DialogTrigger>
-            <DialogContent className='sm:max-w-md p-0 border-none bg-transparent [&>button]:hidden' >
-              <TermsPage />
-            </DialogContent>
-          </Dialog>
+          <Button variant='outline' onClick={handleOpenTerms}>
+            로그인
+          </Button>
         )}
       </div>
 
@@ -47,6 +59,7 @@ const RoomPage = () => {
             className='md:w-45 h-auto'
           />
         </div>
+
         <p className='text-xl md:text-2xl leading-relaxed'>
           남들이 딴짓할 때,
           <br className='md:hidden' /> 우리는{' '}
