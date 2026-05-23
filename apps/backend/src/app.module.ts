@@ -8,11 +8,11 @@ import { TimerModule } from './modules/timer/timer.module';
 
 import { SentryModule, SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { APP_FILTER } from '@nestjs/core';
-import { RedisModule } from './common/redis/redis.module';
-import { ConfigModule } from '@nestjs/config';
 import { GatewayModule } from './modules/gateway/gateway.module';
-
 import { PrismaModule } from './common/prisma.module';
+
+import { RedisModule as CustomRedisModule } from './common/redis/redis.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -26,7 +26,7 @@ import { PrismaModule } from './common/prisma.module';
     UserModule,
     TimerModule,
     SentryModule.forRoot(),
-    RedisModule,
+    CustomRedisModule,
     GatewayModule,
   ],
   controllers: [AppController],
