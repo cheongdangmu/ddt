@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -42,6 +43,8 @@ export class RoomService {
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
   ) {}
+
+  private readonly logger = new Logger(RoomService.name);
 
   async create(
     createRoomDto: CreateRoomDto,
@@ -100,7 +103,7 @@ export class RoomService {
 
     return {
       code,
-      url: `${frontendUrl}/room/${room.code}`,
+      url: `${frontendUrl}/room/${room.id}`,
     };
   }
 
@@ -151,6 +154,11 @@ export class RoomService {
     if (!room) {
       throw new NotFoundException('존재하지 않는 방입니다.');
     }
+
+    const isBanned = await this.redisService.instance.get(
+      `room:ban:${room.id}:${userId ?? guestToken}`,
+    );
+    if (isBanned) throw new ForbiddenException('강퇴된 방입니다.');
 
     if (room.phase === 'result' || room.phase === 'closed') {
       throw new ForbiddenException('종료된 방입니다.');
@@ -271,5 +279,100 @@ export class RoomService {
     }
 
     return { id: room.id, isReturning };
+  }
+
+  async countConnectedMembers(id: string): Promise<number> {
+    const raw = await this.redisService.instance.get(`room:state:${id}`);
+    if (!raw) {
+      return 0;
+    }
+
+    const state = JSON.parse(raw) as RoomState;
+
+    const onlineMembersCount = Object.values(state.members).filter(
+      (member) => member.isLoggedIn === true && member.connected,
+    ).length;
+
+    return onlineMembersCount;
+  }
+
+  async deleteRoom(id: string): Promise<void> {
+    await Promise.all([
+      this.redisService.instance.del(`room:state:${id}`),
+      this.updatePhase(id, 'closed'),
+    ]);
+  }
+
+  async updatePhase(id: string, phase: string): Promise<void> {
+    await this.prismaService.room.update({ where: { id }, data: { phase } });
+  }
+
+  async getRoomState(id: string): Promise<RoomState | null> {
+    const raw = await this.redisService.instance.get(`room:state:${id}`);
+
+    if (!raw) {
+      return null;
+    }
+
+    const state = JSON.parse(raw) as RoomState;
+
+    return state;
+  }
+
+  async setConnected(
+    id: string,
+    userId: string,
+    connected: boolean,
+  ): Promise<void> {
+    const raw = await this.redisService.instance.get(`room:state:${id}`);
+    if (!raw) {
+      this.logger.warn(`방 상태 없음: ${id}`);
+      return;
+    }
+
+    const state = JSON.parse(raw) as RoomState;
+    if (!state.members[userId]) {
+      this.logger.warn(`멤버 없음: ${userId} in ${id}`);
+      return;
+    }
+
+    if (state.members[userId]) {
+      state.members[userId].connected = connected;
+      await this.redisService.instance.set(
+        `room:state:${id}`,
+        JSON.stringify(state),
+        'EX',
+        7200,
+      );
+    }
+  }
+
+  async kickMember(id: string, targetId: string): Promise<void> {
+    const isGuest = targetId.startsWith('guest_');
+
+    await this.prismaService.roomMember.deleteMany({
+      where: {
+        roomId: id,
+        ...(isGuest ? { guestToken: targetId } : { userId: targetId }),
+      },
+    });
+
+    const raw = await this.redisService.instance.get(`room:state:${id}`);
+    if (raw) {
+      const state = JSON.parse(raw) as RoomState;
+      delete state.members[targetId];
+      await this.redisService.instance.set(
+        `room:state:${id}`,
+        JSON.stringify(state),
+        'EX',
+        7200,
+      );
+    }
+    await this.redisService.instance.set(
+      `room:ban:${id}:${targetId}`,
+      '1',
+      'EX',
+      7200,
+    );
   }
 }

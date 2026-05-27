@@ -9,7 +9,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { DefaultEventsMap, Server, Socket } from 'socket.io';
+import { RoomService } from '../../room/room.service';
 
 interface SocketData {
   roomId: string;
@@ -18,9 +19,9 @@ interface SocketData {
 }
 
 type RoomSocket = Socket<
-  Record<string, any>, // ClientToServer 이벤트
-  Record<string, any>, // ServerToClient 이벤트
-  Record<string, any>, // InterServer 이벤트
+  DefaultEventsMap, // ClientToServer 이벤트
+  DefaultEventsMap, // ServerToClient 이벤트
+  DefaultEventsMap, // InterServer 이벤트
   SocketData
 >;
 
@@ -39,14 +40,20 @@ interface JwtPayload {
   },
 })
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly roomService: RoomService,
+  ) {}
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(RoomGateway.name);
 
-  handleConnection(client: RoomSocket): void {
-    const token = client.handshake.auth.token as string;
+  async handleConnection(client: RoomSocket): Promise<void> {
+    const token =
+      (client.handshake.auth.token as string) ??
+      (client.handshake.query.token as string) ??
+      client.handshake.headers.authorization?.replace('Bearer ', '');
     const roomId = client.handshake.query.roomId as string;
 
     if (!token) {
@@ -68,13 +75,40 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    const roomState = await this.roomService.getRoomState(roomId);
+
+    if (!roomState) {
+      client.disconnect();
+      return;
+    }
+
     client.data.roomId = roomId;
+    await client.join(roomId);
+    await this.updateMemberConnection(client, true);
     this.logger.log(`클라이언트 연결됨: ${client.id} 방: ${roomId}`);
-    client.emit('welcome', { message: 'DDT 서버에 오신 것을 환영합니다!' });
+
+    client.emit('room:state', roomState);
   }
 
-  handleDisconnect(client: RoomSocket): void {
+  async handleDisconnect(client: RoomSocket): Promise<void> {
     this.logger.log(`클라이언트 연결 끊김: ${client.id}`);
+
+    const { roomId, userId } = client.data;
+
+    if (!roomId || !userId) {
+      return;
+    }
+
+    const onlineMembersCount =
+      await this.roomService.countConnectedMembers(roomId);
+
+    if (!onlineMembersCount) {
+      this.logger.log(`${client.data.roomId}가 10초 뒤에 닫힙니다.`);
+
+      setTimeout(() => {
+        void this.handleRoomCleanup(client.data.roomId);
+      }, 10000);
+    }
   }
 
   @SubscribeMessage('ping')
@@ -83,14 +117,53 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { event: 'pong', data: '백엔드에서 답장 보냄!' };
   }
 
-  @SubscribeMessage('room:join')
-  async handleJoinRoom(
+  private async updateMemberConnection(
+    client: RoomSocket,
+    connected: boolean,
+  ): Promise<void> {
+    const { roomId, userId } = client.data;
+
+    await this.roomService.setConnected(roomId, userId, connected);
+  }
+
+  private async handleRoomCleanup(roomId: string): Promise<void> {
+    const currentCount = await this.roomService.countConnectedMembers(roomId);
+    if (currentCount === 0) {
+      await this.roomService.deleteRoom(roomId);
+    }
+  }
+
+  @SubscribeMessage('member:kick')
+  async handleKick(
     @ConnectedSocket() client: RoomSocket,
-    @MessageBody() body: { roomId: string },
+    @MessageBody() body: { targetId: string },
   ) {
-    await client.join(body.roomId);
-    client.data.roomId = body.roomId; // 이 줄 추가
-    client.to(body.roomId).emit('room:user-joined', { socketId: client.id });
-    return { ok: true, roomId: body.roomId };
+    const { roomId, userId } = client.data;
+
+    const roomState = await this.roomService.getRoomState(roomId);
+
+    if (!roomState) {
+      return;
+    }
+
+    const isHost = roomState.members[userId]?.isHost;
+
+    if (!isHost) {
+      return;
+    }
+
+    await this.roomService.kickMember(roomId, body.targetId);
+
+    const sockets = await this.server.in(roomId).fetchSockets();
+    const targetSocket = sockets.find(
+      (s) => (s.data as RoomSocket).data.userId === body.targetId,
+    );
+
+    if (targetSocket) {
+      targetSocket.emit('kicked');
+      targetSocket.disconnect();
+
+      this.server.to(roomId).emit('member:kicked', { targetId: body.targetId });
+    }
   }
 }

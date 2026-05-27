@@ -29,7 +29,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @ApiTags('Room API')
-@Controller('room')
+@Controller('rooms')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
@@ -57,15 +57,15 @@ export class RoomController {
   }
 
   @ApiOperation({ summary: '방 ID로 방 정보 조회' })
-  @Get(':id')
-  async findById(@Param('id') id: string) {
+  @Get(':roomId')
+  async findById(@Param('roomId') id: string) {
     return this.roomService.find({ id });
   }
   @ApiOperation({ summary: '방 ID로 방 입장' })
-  @Post(':id')
+  @Post(':roomId')
   @UseGuards(AuthGuard('jwt'))
   async joinById(
-    @Param('id') id: string,
+    @Param('roomId') id: string,
     @Body() joinRoomDto: JoinRoomDto,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -79,17 +79,17 @@ export class RoomController {
   }
 
   @ApiOperation({ summary: '방 코드로 방 정보 조회' })
-  @Get('code/:code')
-  async findByCode(@Param('code') code: string) {
+  @Get('code/:roomCode')
+  async findByCode(@Param('roomCode') code: string) {
     return this.roomService.find({ code });
   }
 
   @ApiOperation({ summary: '방 코드로 방 입장' })
-  @Post('code/:code')
+  @Post('code/:roomCode')
   @UseGuards(AuthGuard('jwt'))
   async joinByCode(
-    @Param('code') code: string,
-    joinRoomDto: JoinRoomDto,
+    @Param('roomCode') code: string,
+    @Body() joinRoomDto: JoinRoomDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const isGuest = req.user.role === 'guest';
