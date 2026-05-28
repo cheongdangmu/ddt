@@ -8,6 +8,18 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+interface ExceptionResponseShape {
+  message?: string | string[];
+  error?: string;
+}
+
+const STATUS_ERROR_CODE: Record<number, string> = {
+  [HttpStatus.UNAUTHORIZED]: 'UNAUTHORIZED',
+  [HttpStatus.FORBIDDEN]: 'FORBIDDEN',
+  [HttpStatus.NOT_FOUND]: 'NOT_FOUND',
+  [HttpStatus.BAD_REQUEST]: 'INVALID_REQUEST',
+};
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
@@ -26,34 +38,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let errorCode = 'INTERNAL_SERVER_ERROR';
 
     if (exception instanceof HttpException) {
-      const exceptionResponse = exception.getResponse() as any;
+      const res = exception.getResponse();
+      const exceptionResponse: ExceptionResponseShape =
+        typeof res === 'object' && res !== null
+          ? res
+          : { message: String(res) };
 
       message = Array.isArray(exceptionResponse.message)
         ? exceptionResponse.message[0]
-        : exceptionResponse.message || exception.message;
+        : (exceptionResponse.message ?? exception.message);
 
-      switch (status) {
-        case HttpStatus.UNAUTHORIZED:
-          errorCode = 'UNAUTHORIZED';
-          break;
-        case HttpStatus.FORBIDDEN:
-          errorCode = 'FORBIDDEN';
-          break;
-        case HttpStatus.NOT_FOUND:
-          errorCode = 'NOT_FOUND';
-          break;
-        case HttpStatus.BAD_REQUEST:
-          errorCode = 'INVALID_REQUEST';
-          break;
-        default:
-          errorCode = exceptionResponse.error || 'UNKNOWN_ERROR';
-      }
+      errorCode = STATUS_ERROR_CODE[status] ?? 'UNKNOWN_ERROR';
 
-      if (exceptionResponse.error && typeof exceptionResponse.error === 'string') {
+      if (typeof exceptionResponse.error === 'string') {
         errorCode = exceptionResponse.error;
       }
     } else {
-      this.logger.error(`[Unhandled Exception] ${request.method} ${request.url}`, exception);
+      this.logger.error(
+        `[Unhandled Exception] ${request.method} ${request.url}`,
+        exception,
+      );
     }
 
     response.status(status).json({
