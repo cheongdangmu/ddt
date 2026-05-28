@@ -3,9 +3,7 @@ import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger
 import { ResultService } from './result.service';
 import type { Request } from 'express';
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
-}
+interface AuthenticatedRequest extends Request { user?: { id: string }; }
 
 @ApiTags('Result API (결과 조회)')
 @Controller('rooms')
@@ -21,15 +19,7 @@ export class ResultController {
     @Req() req: AuthenticatedRequest,
     @Headers('x-guest-token') guestToken?: string,
   ) {
-    const userId = req.user?.id;
-    const data = await this.resultService.getResult(roomId, userId, guestToken);
-    return {
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: `/rooms/${roomId}/result`,
-      message: '세션 결과를 조회했습니다.',
-      data,
-      error: null,
-    };
+    const data = await this.resultService.getResult(roomId, req.user?.id, guestToken);
+    return { message: '세션 결과를 조회했습니다.', data };
   }
 }
