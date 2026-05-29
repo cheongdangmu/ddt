@@ -135,7 +135,7 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${apiUrl}/room`, {
+      const response = await fetch(`${apiUrl}/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
