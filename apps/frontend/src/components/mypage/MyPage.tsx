@@ -1,9 +1,20 @@
 'use client';
 
+import axios from 'axios';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Clock3, Settings } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChevronRight, Clock3 } from 'lucide-react';
+import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { MobileLayout } from '@/components/layout/mobileLayout';
+import { MyPageSettings } from '@/components/mypage/MyPageSettings';
+import { MyPageHistoryList, HistoryItem } from '@/components/mypage/MyPageHistoryList';
+import { useAuthStore } from '@/store/useAuthStore';
+import { formatDuration } from '@/lib/format';
+import { DEFAULT_PROFILE_IMAGE_KEY, getProfileImageSrc } from '@/lib/profileImage';
+import { getUsers } from '@/api/generated/users-사용자/users-사용자';
+import { getAuthApi } from '@/api/generated/인증-auth-api/인증-auth-api';
 
 type UserProfile = {
   userId: string;
@@ -16,16 +27,6 @@ type UserStats = {
   totalRoomCount: number;
   totalFocusMs: number;
   totalEscapeMs: number;
-};
-
-type HistoryItem = {
-  roomId: string;
-  roomTitle: string;
-  profileImage?: string;
-  totalEscapeMs: number;
-  penaltyTier: number;
-  memberCount: number;
-  endedAt: string;
 };
 
 type ApiEnvelope<T> = {
@@ -43,77 +44,103 @@ const getCookieToken = () => {
   return document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1];
 };
 
-const formatDuration = (milliseconds: number) => {
-  const totalMinutes = Math.max(0, Math.floor(milliseconds / 60_000));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0 && minutes > 0) return `${hours}시간 ${minutes}분`;
-  if (hours > 0) return `${hours}시간 00분`;
-  return `${minutes}분`;
-};
-
-const formatHistoryDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}.${month}.${day}`;
-};
-
-const getPenaltyTextColor = (milliseconds: number) => {
-  return milliseconds === 0 ? 'text-[#10B981]' : 'text-[#FF606B]';
-};
 
 export const MyPage = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats>(emptyStats);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const settingsRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+  const { logout } = useAuthStore();
 
   useEffect(() => {
     const token = getCookieToken();
     if (!token) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const headers = { Authorization: `Bearer ${token}` };
+    const axiosInstance = axios.create({ baseURL: apiUrl });
+    const usersApi = getUsers(axiosInstance);
 
-    const loadMyPage = async () => {
-      setIsLoading(true);
-      setErrorMessage('');
+    const loadProfile = async () => {
+      setIsLoadingProfile(true);
 
       try {
-        const [meResponse, statsResponse, historyResponse] = await Promise.all([
-          fetch(`${apiUrl}/users/me`, { headers }),
-          fetch(`${apiUrl}/users/me/stats`, { headers }),
-          fetch(`${apiUrl}/users/me/history?limit=3`, { headers }),
+        const response = await usersApi.usersControllerGetMe({
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = response.data as ApiEnvelope<UserProfile>;
+        setProfile(result.data ?? null);
+      } catch {
+        setErrorMessage('내 정보를 불러오지 못했습니다.');
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    const loadStatsAndHistory = async () => {
+      setIsLoadingHistory(true);
+
+      try {
+        const [statsResponse, historyResponse] = await Promise.all([
+          usersApi.usersControllerGetMyStats({
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          usersApi.usersControllerGetMyHistory({ limit: 3 }, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
-        if (!meResponse.ok || !statsResponse.ok || !historyResponse.ok) {
-          throw new Error('마이페이지 정보를 불러오지 못했습니다.');
-        }
+        const statsResult = statsResponse.data as ApiEnvelope<UserStats>;
+        setStats(statsResult.data ?? emptyStats);
 
-        const meResult = (await meResponse.json()) as ApiEnvelope<UserProfile>;
-        const statsResult = (await statsResponse.json()) as ApiEnvelope<UserStats>;
-        const historyResult = (await historyResponse.json()) as ApiEnvelope<{
+        const historyResult = historyResponse.data as ApiEnvelope<{
           sessions?: HistoryItem[];
         }>;
-
-        setProfile(meResult.data ?? null);
-        setStats(statsResult.data ?? emptyStats);
         setHistory(historyResult.data?.sessions?.slice(0, 3) ?? []);
       } catch {
         setErrorMessage('마이페이지 정보를 불러오지 못했습니다.');
       } finally {
-        setIsLoading(false);
+        setIsLoadingHistory(false);
       }
     };
 
-    void loadMyPage();
+    void loadProfile();
+    void loadStatsAndHistory();
   }, []);
+
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSettingsOpen]);
+
+  const handleLogout = async () => {
+    const token = getCookieToken();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+    if (token) {
+      const axiosInstance = axios.create({ baseURL: apiUrl });
+      const authApi = getAuthApi(axiosInstance);
+      await authApi.authControllerLogout({
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
+
+    logout();
+    router.push('/');
+  };
 
   const summaryCards = useMemo(
     () => [
@@ -137,23 +164,41 @@ export const MyPage = () => {
     [stats],
   );
 
+  const profileImageSrc = profile
+    ? getProfileImageSrc(profile.profileImage) ?? getProfileImageSrc(DEFAULT_PROFILE_IMAGE_KEY)
+    : undefined;
+
   return (
     <MobileLayout
       header={
-        <div className='flex w-full items-center justify-between'>
-          <h1 className='text-[20px] font-medium tracking-normal text-white/90'>마이 페이지</h1>
-          <button
-            type='button'
-            aria-label='설정'
-            className='flex size-8 items-center justify-center rounded-full text-[#8A8A99] transition hover:bg-white/5 hover:text-white'
-          >
-            <Settings size={24} strokeWidth={1.8} />
-          </button>
+        <div className='flex w-full items-center justify-between gap-4'>
+          <HeaderTitle>마이 페이지</HeaderTitle>
+          <MyPageSettings
+            ref={settingsRef}
+            isOpen={isSettingsOpen}
+            onToggle={() => setIsSettingsOpen((prev) => !prev)}
+            onClose={() => setIsSettingsOpen(false)}
+            onLogout={() => {
+              setIsSettingsOpen(false);
+              void handleLogout();
+            }}
+          />
         </div>
       }
     >
       <section className='mb-5 flex items-center gap-4 pt-2'>
-        <div className='size-[62px] shrink-0 rounded-full border-2 border-[#914CFF] bg-[#201E34]' />
+        <div className='relative size-[62px] shrink-0 overflow-hidden rounded-full border-2 border-[#914CFF] bg-[#201E34]'>
+          {profileImageSrc ? (
+            <Image
+              src={profileImageSrc}
+              alt={`${profile?.nickname ?? '사용자'} 프로필`}
+              width={62}
+              height={62}
+              className='h-full w-full object-cover'
+            />
+          ) : null}
+        </div>
+
         <div className='min-w-0'>
           {profile ? (
             <>
@@ -162,11 +207,13 @@ export const MyPage = () => {
               </p>
               <p className='truncate text-[14px] leading-5 text-[#81808D]'>{profile.email}</p>
             </>
-          ) : (
+          ) : isLoadingProfile ? (
             <>
               <div className='mb-2 h-5 w-20 rounded bg-white/10' />
               <div className='h-4 w-36 rounded bg-white/10' />
             </>
+          ) : (
+            <p className='text-[14px] text-[#FF606B]'>{errorMessage}</p>
           )}
         </div>
       </section>
@@ -202,7 +249,7 @@ export const MyPage = () => {
         <div className='mb-3 flex items-center justify-between'>
           <h2 className='text-[14px] font-medium text-[#898793]'>최근 참여 기록</h2>
           <Link
-            href='/mypage'
+            href='/mypage/history'
             className='flex items-center gap-1 text-[13px] font-medium text-[#898793] transition hover:text-white'
           >
             전체 보기
@@ -210,49 +257,14 @@ export const MyPage = () => {
           </Link>
         </div>
 
-        <div className='space-y-3'>
-          {isLoading ? (
-            <div className='rounded-[12px] bg-[#1D1C31] px-[14px] py-6 text-center text-[13px] text-[#898793]'>
-              불러오는 중...
-            </div>
-          ) : errorMessage ? (
-            <div className='rounded-[12px] bg-[#1D1C31] px-[14px] py-6 text-center text-[13px] text-[#FF606B]'>
-              {errorMessage}
-            </div>
-          ) : history.length === 0 ? (
-            <div className='rounded-[12px] bg-[#1D1C31] px-[14px] py-6 text-center text-[13px] text-[#898793]'>
-              최근 참여 기록이 없습니다.
-            </div>
-          ) : (
-            history.map((item) => (
-              <Link
-                key={item.roomId}
-                href={`/result/${item.roomId}`}
-                className='flex min-h-[95px] items-center justify-between rounded-[12px] bg-[#1D1C31] px-[14px] py-4 transition hover:bg-[#24223A]'
-              >
-                <div className='min-w-0'>
-                  <p className='mb-1 text-[12px] font-medium text-[#747281]'>
-                    {formatHistoryDate(item.endedAt)}
-                  </p>
-                  <p className='mb-2 truncate text-[17px] font-extrabold leading-6 text-white'>
-                    {item.roomTitle}
-                  </p>
-                  <p className='text-[12px] font-medium text-[#A5A3AF]'>
-                    참여 {item.memberCount}명
-                    <span className={`ml-2 ${getPenaltyTextColor(item.totalEscapeMs)}`}>
-                      내 이탈 {formatDuration(item.totalEscapeMs)}
-                    </span>
-                  </p>
-                </div>
-                <ChevronRight
-                  className='ml-3 shrink-0 text-[#8A8896]'
-                  size={17}
-                  strokeWidth={1.8}
-                />
-              </Link>
-            ))
-          )}
-        </div>
+        <MyPageHistoryList
+          history={history}
+          isLoading={isLoadingHistory}
+          errorMessage={errorMessage}
+          emptyMessage='최근 참여 기록이 없습니다.'
+          errorOnlyWhenEmpty
+          chevronDirection='right'
+        />
       </section>
     </MobileLayout>
   );

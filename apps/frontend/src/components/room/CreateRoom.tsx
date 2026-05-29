@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import { useState } from 'react';
 import { useRouter } from "next/navigation";
 import { toast } from 'sonner';
@@ -19,6 +20,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { getRoomApi } from '@/api/generated/room-api/room-api';
+import { getUsers } from '@/api/generated/users-사용자/users-사용자';
+import type { CreateRoomDto } from '@/api/generated/models/createRoomDto';
 
 type Step = 'form' | 'complete';
 
@@ -135,21 +139,29 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${apiUrl}/rooms`, {
-        method: 'POST',
+      const axiosInstance = axios.create({ baseURL: apiUrl });
+      const roomApi = getRoomApi(axiosInstance);
+      const usersApi = getUsers(axiosInstance);
+
+      const userResponse = await usersApi.usersControllerGetMe({
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userResult = userResponse.data as { data?: { nickname: string; profileImage?: string } };
+
+      const createRoomDto: CreateRoomDto = {
+        title: roomName,
+        password,
+        nickname: userResult.data?.nickname ?? '익명',
+        profileImage: userResult.data?.profileImage ?? 'AVATAR_BEAR',
+      };
+
+      const response = await roomApi.roomControllerCreate(createRoomDto, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title: roomName, password }),
       });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message ?? '방 생성에 실패했습니다.');
-      }
-
-      const data: { code: string; url: string } = await response.json();
+      const data = response.data as { code: string; url: string };
       setRoomCode(data.code);
       setStep('complete');
     } catch (error) {
