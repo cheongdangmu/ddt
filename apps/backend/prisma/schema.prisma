@@ -119,7 +119,7 @@ model RoomResult {
   penaltyTier   Int             @map("penalty_tier")
   createdAt     DateTime        @default(now()) @map("created_at")
 
-  roomMember    RoomMember      @relation(fields: [roomMemberId], references: [roomMemberId], onDelete: Cascade)
+  roomMember    RoomMember      @relation(fields: [roomMemberId], references: [id], onDelete: Cascade)
   room          Room            @relation(fields: [roomCode], references: [code], onDelete: Cascade)
   penalties     ResultPenalty[]
 
