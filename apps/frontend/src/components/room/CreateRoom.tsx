@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import { useState } from 'react';
 import { useRouter } from "next/navigation";
 import { toast } from 'sonner';
@@ -19,6 +20,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { getRoomApi } from '@/api/generated/room-api/room-api';
+import { getUsers } from '@/api/generated/users-사용자/users-사용자';
+import type { CreateRoomDto } from '@/api/generated/models/createRoomDto';
 
 type Step = 'form' | 'complete';
 
@@ -135,22 +139,30 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${apiUrl}/room`, {
-        method: 'POST',
+      const axiosInstance = axios.create({ baseURL: apiUrl });
+      const roomApi = getRoomApi(axiosInstance);
+      const usersApi = getUsers(axiosInstance);
+
+      const userResponse = await usersApi.usersControllerGetMe({
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userResult = userResponse.data as { data?: { nickname: string; profileImage?: string } };
+
+      const createRoomDto: CreateRoomDto = {
+        title: roomName,
+        password,
+        nickname: userResult.data?.nickname ?? '익명',
+        profileImage: userResult.data?.profileImage ?? 'AVATAR_BEAR',
+      };
+
+      const response = await roomApi.roomControllerCreate(createRoomDto, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title: roomName, password }),
       });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message ?? '방 생성에 실패했습니다.');
-      }
-
-      const data: { code: string; url: string } = await response.json();
-      setRoomCode(data.code);
+      const result = response.data as { data: { code: string; url: string } };
+      setRoomCode(result.data.code);
       setStep('complete');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '방 생성에 실패했습니다.');
@@ -165,6 +177,16 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
     const text = `[${roomName}] 에 초대합니다\n비밀번호 : ${password}\n방 코드 : ${roomCode}\n입장 링크 : ${inviteLink}`;
     await navigator.clipboard.writeText(text);
     toast.success('초대 정보가 복사되었어요');
+  };
+
+  const handleEnterRoom = () => {
+    if (roomCode) {
+      if (onEnter) {
+        onEnter(roomCode);
+      } else {
+        router.push(`/room/${roomCode}`);
+      }
+    }
   };
 
   return (
@@ -187,7 +209,7 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
           <Button
             style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)', boxShadow: '0 0 40px rgba(124,58,237,0.45)' }}
             className='w-full h-14 rounded-[24px] text-base font-bold hover:scale-[1.01] active:scale-[0.98]'
-            onClick={() => onEnter?.(roomCode)}
+            onClick={handleEnterRoom}
           >
             입장하기
           </Button>

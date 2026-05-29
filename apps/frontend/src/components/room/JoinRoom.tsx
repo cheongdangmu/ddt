@@ -17,29 +17,17 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/useAuthStore';
-
-const PROFILE_IMAGES = [
-  '/avatars/bear.png',
-  '/avatars/cat.png',
-  '/avatars/crocodile.png',
-  '/avatars/fox.png',
-  '/avatars/hedgehog.png',
-  '/avatars/monkey.png',
-  '/avatars/penguin.png',
-  '/avatars/pig.png',
-  '/avatars/rabbit.png',
-  '/avatars/shiba.png',
-];
+import { PROFILE_IMAGE_OPTIONS } from '@/lib/profileImage';
 
 interface JoinRoomProps {
-  onEnter?: (data: { nickname: string; profileIndex: number; password: string }) => void;
+  onEnter?: (data: { nickname: string; profileImage: string; password: string }) => void;
 }
 
 export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
-  const { isLoggedIn, checkLoginStatus, logout } = useAuthStore();
+  const { isLoggedIn, checkLoginStatus } = useAuthStore();
 
   const [nickname, setNickname] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(0);
@@ -57,16 +45,6 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
     window.open(`${apiUrl}/auth/google`, 'Google Login', 'width=500,height=600,left=200,top=200');
   };
 
-  const handleLogout = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const token = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1];
-    await fetch(`${apiUrl}/auth/logout`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {});
-    logout();
-  };
-
   const isValid =
     nickname.trim().length > 0 &&
     password.length >= 4 &&
@@ -76,7 +54,11 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
     if (!isValid) return;
     setIsSubmitting(true);
     try {
-      await onEnter?.({ nickname, profileIndex: selectedProfile, password });
+      await onEnter?.({
+        nickname,
+        profileImage: PROFILE_IMAGE_OPTIONS[selectedProfile].key,
+        password,
+      });
       router.push(`/room/${code}`);
     } finally {
       setIsSubmitting(false);
@@ -121,18 +103,6 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
           <HeaderTitle>
             방 입장하기
           </HeaderTitle>
-          {isLoggedIn ? (
-            <button
-              onClick={handleLogout}
-              className='absolute right-4 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400 transition-colors'
-            >
-              로그아웃
-            </button>
-          ) : (
-            <span className='absolute right-4 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400'>
-              비로그인
-            </span>
-          )}
         </>
       }
       bottomButton={
@@ -169,9 +139,9 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
         <div className='flex flex-col gap-3'>
           <Label className='text-[15px] font-bold text-white/85'>프로필 이미지</Label>
           <div className='grid grid-cols-5 gap-3'>
-            {PROFILE_IMAGES.map((src, index) => (
+            {PROFILE_IMAGE_OPTIONS.map((profileImage, index) => (
               <button
-                key={index}
+                key={profileImage.key}
                 type='button'
                 onClick={() => setSelectedProfile(index)}
                 className='relative aspect-square rounded-full bg-[#1A1A2E] border-2 transition-all'
@@ -180,8 +150,8 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
                 }}
               >
                 <img
-                  src={src}
-                  alt={`프로필 ${index + 1}`}
+                  src={profileImage.src}
+                  alt={profileImage.label}
                   className='w-full h-full object-cover rounded-full'
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display = 'none';
