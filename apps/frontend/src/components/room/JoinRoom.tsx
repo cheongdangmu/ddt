@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
@@ -9,6 +9,7 @@ import { MobileLayout } from '@/components/layout/mobileLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ProfileNicknamePicker } from '@/components/common/ProfileNicknamePicker';
 import {
   Dialog,
   DialogContent,
@@ -121,53 +122,13 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
     >
       <div className='flex flex-col gap-6 pt-2'>
 
-        {/* 닉네임 */}
-        <div className='flex flex-col gap-2'>
-          <Label className='text-[15px] font-bold text-white/85'>내 닉네임</Label>
-          <Input
-            type='text'
-            placeholder='방에서 사용할 닉네임을 입력해주세요'
-            maxLength={10}
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            className='h-[52px] rounded-[16px] border-white/[0.12] bg-[#1A1A2E] px-4 text-sm text-white placeholder:text-white/30 focus-visible:border-[#8B5CF6] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/30'
-          />
-          <span className='text-xs text-[#6B7280] text-right'>{nickname.length}/10</span>
-        </div>
-
-        {/* 프로필 이미지 */}
-        <div className='flex flex-col gap-3'>
-          <Label className='text-[15px] font-bold text-white/85'>프로필 이미지</Label>
-          <div className='grid grid-cols-5 gap-3'>
-            {PROFILE_IMAGE_OPTIONS.map((profileImage, index) => (
-              <button
-                key={profileImage.key}
-                type='button'
-                onClick={() => setSelectedProfile(index)}
-                className='relative aspect-square rounded-full bg-[#1A1A2E] border-2 transition-all'
-                style={{
-                  borderColor: selectedProfile === index ? '#8B5CF6' : 'transparent',
-                }}
-              >
-                <img
-                  src={profileImage.src}
-                  alt={profileImage.label}
-                  className='w-full h-full object-cover rounded-full'
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                {selectedProfile === index && (
-                  <span className='absolute top-0.5 right-0.5 w-5 h-5 bg-[#8B5CF6] rounded-full flex items-center justify-center'>
-                    <svg width='10' height='8' viewBox='0 0 10 8' fill='none'>
-                      <path d='M1 4L3.5 6.5L9 1' stroke='white' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
-                    </svg>
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ProfileNicknamePicker
+          nickname={nickname}
+          onNicknameChange={setNickname}
+          selectedProfile={selectedProfile}
+          onSelectProfile={setSelectedProfile}
+          nicknamePlaceholder='방에서 사용할 닉네임을 입력해주세요'
+        />
 
         {/* 비밀번호 */}
         <div className='flex flex-col gap-2'>
@@ -177,7 +138,7 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
               type={showPassword ? 'text' : 'password'}
               placeholder='비밀번호를 입력해주세요'
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               className='h-[52px] rounded-[16px] border-white/[0.12] bg-[#1A1A2E] px-4 pr-10 text-sm text-white placeholder:text-white/30 focus-visible:border-[#8B5CF6] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/30'
             />
             <Button
