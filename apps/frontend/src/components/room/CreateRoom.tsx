@@ -161,8 +161,8 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
         },
       });
 
-      const data = response.data as { code: string; url: string };
-      setRoomCode(data.code);
+      const result = response.data as { data: { code: string; url: string } };
+      setRoomCode(result.data.code);
       setStep('complete');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '방 생성에 실패했습니다.');
@@ -177,6 +177,16 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
     const text = `[${roomName}] 에 초대합니다\n비밀번호 : ${password}\n방 코드 : ${roomCode}\n입장 링크 : ${inviteLink}`;
     await navigator.clipboard.writeText(text);
     toast.success('초대 정보가 복사되었어요');
+  };
+
+  const handleEnterRoom = () => {
+    if (roomCode) {
+      if (onEnter) {
+        onEnter(roomCode);
+      } else {
+        router.push(`/room/${roomCode}`);
+      }
+    }
   };
 
   return (
@@ -199,7 +209,7 @@ export const CreateRoom = ({ onEnter }: CreateRoomProps) => {
           <Button
             style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)', boxShadow: '0 0 40px rgba(124,58,237,0.45)' }}
             className='w-full h-14 rounded-[24px] text-base font-bold hover:scale-[1.01] active:scale-[0.98]'
-            onClick={() => onEnter?.(roomCode)}
+            onClick={handleEnterRoom}
           >
             입장하기
           </Button>

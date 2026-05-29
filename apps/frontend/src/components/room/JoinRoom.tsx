@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
@@ -19,7 +18,6 @@ import {
 } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/useAuthStore';
 import { PROFILE_IMAGE_OPTIONS } from '@/lib/profileImage';
-import { getAuthApi } from '@/api/generated/인증-auth-api/인증-auth-api';
 
 interface JoinRoomProps {
   onEnter?: (data: { nickname: string; profileImage: string; password: string }) => void;
@@ -29,7 +27,7 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
-  const { isLoggedIn, checkLoginStatus, logout } = useAuthStore();
+  const { isLoggedIn, checkLoginStatus } = useAuthStore();
 
   const [nickname, setNickname] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(0);
@@ -45,19 +43,6 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
   const handleGoogleLogin = () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     window.open(`${apiUrl}/auth/google`, 'Google Login', 'width=500,height=600,left=200,top=200');
-  };
-
-  const handleLogout = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const token = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1];
-    if (token) {
-      const axiosInstance = axios.create({ baseURL: apiUrl });
-      const authApi = getAuthApi(axiosInstance);
-      await authApi.authControllerLogout({
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
-    }
-    logout();
   };
 
   const isValid =
@@ -118,18 +103,6 @@ export const JoinRoom = ({ onEnter }: JoinRoomProps) => {
           <HeaderTitle>
             방 입장하기
           </HeaderTitle>
-          {isLoggedIn ? (
-            <button
-              onClick={handleLogout}
-              className='absolute right-4 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400 transition-colors'
-            >
-              로그아웃
-            </button>
-          ) : (
-            <span className='absolute right-4 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400'>
-              비로그인
-            </span>
-          )}
         </>
       }
       bottomButton={
