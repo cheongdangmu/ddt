@@ -39,7 +39,7 @@ interface ContractFormValues {
 }
 
 interface ContractFormProps {
-  roomId: string;
+  roomCode: string;
   userId: string;
   nickname: string;
   canEdit: boolean;
@@ -67,7 +67,7 @@ const OwnerIndicator = ({ fieldKey, fieldOwners }: OwnerIndicatorProps) => {
 };
 
 const ContractForm = ({
-  roomId,
+  roomCode,
   userId,
   nickname,
   canEdit,
@@ -87,7 +87,7 @@ const ContractForm = ({
     addPenalty,
     updatePenalty,
     removePenalty,
-  } = useYjsContract(roomId, true);
+  } = useYjsContract(roomCode, true);
 
   const [arrayError, setArrayError] = useState<string | null>(null);
 
