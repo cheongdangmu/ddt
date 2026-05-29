@@ -296,8 +296,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!ok) {
       return;
     }
-    this.server
-      .to(roomId)
-      .emit('edit:all-updated', { targetId: 'all', canEdit: body.canEdit });
+    this.server.to(roomId).emit('edit:all-updated', { canEdit: body.canEdit });
   }
 }

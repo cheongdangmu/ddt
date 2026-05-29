@@ -3,10 +3,14 @@ import { ReactNode } from 'react';
 interface MobileLayoutProps {
   header: ReactNode;
   children: ReactNode;
-  bottomButton: ReactNode;
+  bottomButton?: ReactNode;
 }
 
-export const MobileLayout = ({ header, children, bottomButton }: MobileLayoutProps) => {
+export const MobileLayout = ({
+  header,
+  children,
+  bottomButton,
+}: MobileLayoutProps) => {
   return (
     <div className='relative flex flex-col min-h-screen'>
       {/* 상단 헤더 고정 */}
