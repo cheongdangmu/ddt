@@ -20,25 +20,14 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useMutation } from '@tanstack/react-query';
 import { getRoomApi } from '@/api/generated/room-api/room-api';
 import { toast } from 'sonner';
-
-const PROFILE_OPTIONS = [
-  { key: 'basic_image_key_01', src: '/avatars/bear.png' },
-  { key: 'basic_image_key_02', src: '/avatars/cat.png' },
-  { key: 'basic_image_key_03', src: '/avatars/crocodile.png' },
-  { key: 'basic_image_key_04', src: '/avatars/fox.png' },
-  { key: 'basic_image_key_05', src: '/avatars/hedgehog.png' },
-  { key: 'basic_image_key_06', src: '/avatars/monkey.png' },
-  { key: 'basic_image_key_07', src: '/avatars/penguin.png' },
-  { key: 'basic_image_key_08', src: '/avatars/pig.png' },
-  { key: 'basic_image_key_09', src: '/avatars/rabbit.png' },
-  { key: 'basic_image_key_10', src: '/avatars/shiba.png' },
-];
+import { PROFILE_IMAGE_OPTIONS } from '@/lib/profileImage';
+import Image from 'next/image';
 
 export const JoinRoom = () => {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
-  const { isLoggedIn, checkLoginStatus, logout } = useAuthStore();
+  const { isLoggedIn, checkLoginStatus } = useAuthStore();
 
   const [nickname, setNickname] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(0);
@@ -90,16 +79,6 @@ export const JoinRoom = () => {
     window.addEventListener('message', handler);
   };
 
-  const handleLogout = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const token = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1];
-    await fetch(`${apiUrl}/auth/logout`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {});
-    logout();
-  };
-
   const joinMutation = useMutation({
     mutationFn: async (input: {
       password: string;
@@ -129,7 +108,7 @@ export const JoinRoom = () => {
     joinMutation.mutate({
       password: submitPassword,
       nickname,
-      profileImage: PROFILE_OPTIONS[selectedProfile].key,
+      profileImage: PROFILE_IMAGE_OPTIONS[selectedProfile].key,
     });
   };
 
@@ -171,18 +150,6 @@ export const JoinRoom = () => {
           <>
             <BackButton />
             <HeaderTitle>방 입장하기</HeaderTitle>
-            {isLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                className='absolute right-4 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400 transition-colors'
-              >
-                로그아웃
-              </button>
-            ) : (
-              <span className='absolute right-4 text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400'>
-                비로그인
-              </span>
-            )}
           </>
         }
         bottomButton={
@@ -226,9 +193,9 @@ export const JoinRoom = () => {
               프로필 이미지
             </Label>
             <div className='grid grid-cols-5 gap-3'>
-              {PROFILE_OPTIONS.map((opt, index) => (
+              {PROFILE_IMAGE_OPTIONS.map((opt, index) => (
                 <button
-                  key={index}
+                  key={opt.key} // ← index보다 key가 안전
                   type='button'
                   onClick={() => setSelectedProfile(index)}
                   className='relative aspect-square rounded-full bg-[#1A1A2E] border-2 transition-all'
@@ -237,17 +204,15 @@ export const JoinRoom = () => {
                       selectedProfile === index ? '#8B5CF6' : 'transparent',
                   }}
                 >
-                  <img
+                  <Image
                     src={opt.src}
-                    alt={`프로필 ${index + 1}`}
-                    className='w-full h-full object-cover rounded-full'
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display =
-                        'none';
-                    }}
+                    alt={opt.label} // ← label 활용
+                    fill
+                    sizes='(max-width: 390px) 60px, 80px'
+                    className='object-cover rounded-full z-0'
                   />
                   {selectedProfile === index && (
-                    <span className='absolute top-0.5 right-0.5 w-5 h-5 bg-[#8B5CF6] rounded-full flex items-center justify-center'>
+                    <span className='absolute top-0.5 z-10 right-0.5 w-5 h-5 bg-[#8B5CF6] rounded-full flex items-center justify-center'>
                       <svg width='10' height='8' viewBox='0 0 10 8' fill='none'>
                         <path
                           d='M1 4L3.5 6.5L9 1'
