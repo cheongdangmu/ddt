@@ -48,6 +48,8 @@ export class ResultController {
           roomCode: 'V1StGXR8',
           roomTitle: '스터디방',
           totalSessionMs: 7200000,
+          serverTime: '2026-05-29T01:00:00.000Z',
+          rouletteEndsAt: '2026-05-29T01:10:00.000Z',
           completedRounds: 4,
           penaltyMemberCount: 2,
           allClear: false,

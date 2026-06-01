@@ -22,6 +22,9 @@ type RoomWithDetails = NonNullable<
   }>
 >;
 
+// 결과/룰렛 체류 제한 시간. 화면상 임시 10분 (도메인 §8 미결 — 팀 확정 후 변경 가능).
+const ROULETTE_TIMEOUT_MS = 10 * 60 * 1000;
+
 @Injectable()
 export class ResultService {
   constructor(
@@ -48,6 +51,15 @@ export class ResultService {
       room.startedAt && room.endedAt
         ? room.endedAt.getTime() - room.startedAt.getTime()
         : null;
+
+    const now = new Date();
+    // 카운트다운 기준 시각(anchor): 현재는 '세션 종료(결과 진입)' = endedAt 기준.
+    // 정책이 '룰렛 화면 진입' 기준으로 바뀌어도 이 anchor 한 줄만 교체하면 되며,
+    // 응답은 절대 시각(rouletteEndsAt)이라 프론트 카운트다운 로직은 영향 없음.
+    const rouletteAnchor = room.endedAt;
+    const rouletteEndsAt = rouletteAnchor
+      ? new Date(rouletteAnchor.getTime() + ROULETTE_TIMEOUT_MS)
+      : null;
 
     const members = room.roomMembers.map((m) => {
       const totalEscapeMs = m.result?.totalEscapeMs ?? 0;
@@ -90,6 +102,8 @@ export class ResultService {
       roomCode: room.code,
       roomTitle: room.title,
       totalSessionMs,
+      serverTime: now,
+      rouletteEndsAt,
       completedRounds: room.template?.rounds ?? null,
       penaltyMemberCount,
       allClear: members.every((m) => m.isAllClear),
@@ -109,8 +123,28 @@ export class ResultService {
     };
   }
 
+  /**
+   * 룰렛 제한 시간 경과 시 미공개 벌칙을 일괄 자동 공개한다.
+   * 벌칙 결과는 세션 종료 시 이미 확정돼 있으므로, 여기선 공개(isRevealed) 플래그만
+   * 전환하여 자리를 뜬 멤버의 벌칙도 전원에게 보이도록 보강한다.
+   * @returns 실제 공개 처리된 항목이 있었는지 여부
+   */
+  private async revealExpiredPenalties(room: RoomWithDetails): Promise<boolean> {
+    if (!room.endedAt) return false;
+    if (Date.now() <= room.endedAt.getTime() + ROULETTE_TIMEOUT_MS) return false;
+
+    const memberIds = room.roomMembers.map((m) => m.id);
+    if (memberIds.length === 0) return false;
+
+    const { count } = await this.prisma.resultPenalty.updateMany({
+      where: { roomMemberId: { in: memberIds }, isRevealed: false },
+      data: { isRevealed: true },
+    });
+    return count > 0;
+  }
+
   async getResult(roomCode: string, _userId?: string, _guestToken?: string) {
-    const room = await this.fetchRoom(roomCode);
+    let room = await this.fetchRoom(roomCode);
 
     if (!room) throw new NotFoundException('결과를 찾을 수 없습니다.');
     if (room.phase !== 'result')
@@ -130,9 +164,13 @@ export class ResultService {
           '결과 데이터를 생성하는 중 오류가 발생했습니다.',
         );
       }
-      const refreshed = await this.fetchRoom(roomCode);
-      if (!refreshed) throw new NotFoundException('결과를 찾을 수 없습니다.');
-      return this.buildResponse(refreshed);
+      room = await this.fetchRoom(roomCode);
+      if (!room) throw new NotFoundException('결과를 찾을 수 없습니다.');
+    }
+
+    // 룰렛 제한 시간 경과 시: 미공개 벌칙 일괄 자동 공개 (자리 뜬 멤버 보강)
+    if (await this.revealExpiredPenalties(room)) {
+      room = (await this.fetchRoom(roomCode)) ?? room;
     }
 
     return this.buildResponse(room);
