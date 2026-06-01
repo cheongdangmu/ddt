@@ -50,9 +50,14 @@ export class PenaltyService {
           0,
         );
 
-        // 중도 포기자(탈주): 포기~종료 잔여 시간을 이탈 시간에 합산(UI 표기용)
-        if (member.gaveUpAt && room.endedAt) {
-          totalEscapeMs += room.endedAt.getTime() - member.gaveUpAt.getTime();
+        // 중도 포기자(탈주): 포기~종료 잔여 시간을 이탈 시간에 합산(UI 표기용).
+        // endedAt 미설정 시 현재 시각으로 방어 + 음수 가드.
+        if (member.gaveUpAt) {
+          const sessionEndedAt = room.endedAt ?? new Date();
+          totalEscapeMs += Math.max(
+            0,
+            sessionEndedAt.getTime() - member.gaveUpAt.getTime(),
+          );
         }
 
         const { penaltyTier, penaltyCount, isForceAll } = member.gaveUpAt
