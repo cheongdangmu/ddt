@@ -122,10 +122,6 @@ export class UsersController {
     status: 400,
     description: '방 참여 중에는 탈퇴할 수 없습니다.',
   })
-  @ApiResponse({
-    status: 400,
-    description: '방 참여 중에는 탈퇴할 수 없습니다.',
-  })
   async deleteMe(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     const data = await this.usersService.deleteMe(userId);
