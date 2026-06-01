@@ -88,6 +88,20 @@
   /* Popover */
   --popover: #111827;
 
+  /* Roulette */
+  --roulette-panel: #1E1B4B;
+  --roulette-panel-border: #312E81;
+  --roulette-card: #111026;
+  --roulette-card-border: #1E1B4B;
+  --roulette-history: #1A1833;
+  --roulette-history-border: #2D2A4A;
+  --roulette-wheel-even: #2E1065;
+  --roulette-wheel-odd: #4C1D95;
+  --roulette-wheel-center: #0F0E17;
+  --roulette-dialog: #292E3E;
+  --roulette-dialog-secondary: #1D2033;
+  --roulette-dialog-secondary-border: #353B52;
+
   /* Radius base (kept for any calc usage) */
   --radius: 1rem;
 
@@ -125,6 +139,18 @@
   --input:  #111827;
   --ring:   #8B5CF6;
   --popover: #111827;
+  --roulette-panel: #1E1B4B;
+  --roulette-panel-border: #312E81;
+  --roulette-card: #111026;
+  --roulette-card-border: #1E1B4B;
+  --roulette-history: #1A1833;
+  --roulette-history-border: #2D2A4A;
+  --roulette-wheel-even: #2E1065;
+  --roulette-wheel-odd: #4C1D95;
+  --roulette-wheel-center: #0F0E17;
+  --roulette-dialog: #292E3E;
+  --roulette-dialog-secondary: #1D2033;
+  --roulette-dialog-secondary-border: #353B52;
   --sidebar:                  #111827;
   --sidebar-foreground:       #FFFFFF;
   --sidebar-primary:          #7C3AED;
@@ -142,5 +168,9 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Noto Sans KR', sans-serif;
+  }
+  html, body {
+    padding-right: 0px !important;
+    --removed-body-scroll-bar-size: 0px !important;
   }
 }
