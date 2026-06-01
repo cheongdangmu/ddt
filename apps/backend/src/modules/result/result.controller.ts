@@ -8,6 +8,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ResultService } from './result.service';
+import { ResultResponseDto } from './dto/result.dto';
+import { ApiSuccessResponse } from '../../common/swagger/api-success-response.decorator';
 import type { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
@@ -35,61 +37,9 @@ export class ResultController {
     description: '방 코드 (8자리)',
     example: 'V1StGXR8',
   })
-  @ApiResponse({
+  @ApiSuccessResponse(ResultResponseDto, {
     status: 200,
     description: '조회 성공',
-    schema: {
-      example: {
-        statusCode: 200,
-        timestamp: '2026-05-29T01:00:00.000Z',
-        path: '/rooms/V1StGXR8/result',
-        message: '세션 결과를 조회했습니다.',
-        data: {
-          roomCode: 'V1StGXR8',
-          roomTitle: '스터디방',
-          totalSessionMs: 7200000,
-          serverTime: '2026-05-29T01:00:00.000Z',
-          rouletteEndsAt: '2026-05-29T01:10:00.000Z',
-          completedRounds: 4,
-          penaltyMemberCount: 2,
-          allClear: false,
-          members: [
-            {
-              memberId: 'uuid',
-              userId: 'user-uuid',
-              nickname: '집중왕',
-              profileImage: 'https://example.com/profile.png',
-              isHost: false,
-              isLoggedIn: true,
-              rank: 1,
-              totalEscapeMs: 60000,
-              penaltyTier: 1,
-              penaltyCount: 1,
-              isAllClear: false,
-              gaveUpAt: null,
-              penalties: {
-                totalCount: 1,
-                items: [{ content: '팔굽혀펴기 10회', count: 1 }],
-              },
-            },
-          ],
-          rule: {
-            focusMin: 25,
-            breakMin: 5,
-            rounds: 4,
-            penalties: [{ itemId: 'uuid', content: '팔굽혀펴기 10회' }],
-            tierConfig: {
-              tiers: [
-                { tier: 1, minPct: 0, maxPct: 10, count: 0 },
-                { tier: 2, minPct: 10, maxPct: 30, count: 1 },
-                { tier: 3, minPct: 30, maxPct: null, count: 3 },
-              ],
-            },
-          },
-        },
-        error: null,
-      },
-    },
   })
   @ApiResponse({
     status: 403,

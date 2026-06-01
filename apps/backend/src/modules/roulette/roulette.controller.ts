@@ -9,7 +9,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { RouletteService } from './roulette.service';
-import { SpinRouletteDto } from './dto/roulette.dto';
+import {
+  SpinRouletteDto,
+  SpinRouletteResponseDto,
+  ExitRouletteResponseDto,
+} from './dto/roulette.dto';
+import { ApiSuccessResponse } from '../../common/swagger/api-success-response.decorator';
 import type { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
@@ -37,23 +42,9 @@ export class RouletteController {
     example: 'V1StGXR8',
   })
   @ApiBody({ type: SpinRouletteDto })
-  @ApiResponse({
+  @ApiSuccessResponse(SpinRouletteResponseDto, {
     status: 201,
     description: '스핀 성공',
-    schema: {
-      example: {
-        statusCode: 201,
-        message: '룰렛이 스핀되었습니다.',
-        data: {
-          spinIndex: 1,
-          penaltyItemId: 'uuid',
-          penaltyContent: '팔굽혀펴기 10회',
-          remainingSpins: 2,
-          isFinished: false,
-        },
-        error: null,
-      },
-    },
   })
   @ApiResponse({
     status: 400,
@@ -91,22 +82,9 @@ export class RouletteController {
     description: '방 코드 (8자리)',
     example: 'V1StGXR8',
   })
-  @ApiResponse({
+  @ApiSuccessResponse(ExitRouletteResponseDto, {
     status: 201,
     description: '이탈 처리 성공',
-    schema: {
-      example: {
-        statusCode: 201,
-        message: '룰렛이 처리되었습니다.',
-        data: {
-          autoRevealed: true,
-          revealedPenalties: [
-            { id: 'uuid', content: '팔굽혀펴기 10회', count: 1 },
-          ],
-        },
-        error: null,
-      },
-    },
   })
   @ApiResponse({
     status: 400,

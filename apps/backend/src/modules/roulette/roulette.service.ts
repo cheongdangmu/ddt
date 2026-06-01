@@ -24,7 +24,9 @@ export class RouletteService {
     const member = await this.prisma.roomMember.findFirst({
       where: { roomCode, ...(isGuest ? { guestToken } : { userId }) },
       include: {
-        result: { include: { penalties: true } },
+        result: {
+          include: { penalties: { orderBy: { content: 'asc' } } },
+        },
         room: { include: { template: { include: { penalties: true } } } },
       },
     });
@@ -32,6 +34,7 @@ export class RouletteService {
     if (!member || !member.result)
       throw new BadRequestException('룰렛 정보가 없습니다.');
 
+    // spinIndex는 content 오름차순 고정 순서를 전제로 한다.
     const penalty = member.result.penalties[spinIndex - 1];
     if (!penalty)
       throw new BadRequestException('해당 스핀의 벌칙이 존재하지 않습니다.');
