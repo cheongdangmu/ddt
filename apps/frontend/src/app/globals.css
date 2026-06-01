@@ -88,6 +88,20 @@
   /* Popover */
   --popover: #111827;
 
+  /* Roulette */
+  --roulette-panel: #1e1b4b;
+  --roulette-panel-border: #312e81;
+  --roulette-card: #111026;
+  --roulette-card-border: #1e1b4b;
+  --roulette-history: #1a1833;
+  --roulette-history-border: #2d2a4a;
+  --roulette-wheel-even: #2e1065;
+  --roulette-wheel-odd: #4c1d95;
+  --roulette-wheel-center: #0f0e17;
+  --roulette-dialog: #292e3e;
+  --roulette-dialog-secondary: #1d2033;
+  --roulette-dialog-secondary-border: #353b52;
+
   /* Radius base (kept for any calc usage) */
   --radius: 1rem;
 
@@ -133,6 +147,26 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.12);
   --sidebar-ring: #8b5cf6;
+  --roulette-panel: #1e1b4b;
+  --roulette-panel-border: #312e81;
+  --roulette-card: #111026;
+  --roulette-card-border: #1e1b4b;
+  --roulette-history: #1a1833;
+  --roulette-history-border: #2d2a4a;
+  --roulette-wheel-even: #2e1065;
+  --roulette-wheel-odd: #4c1d95;
+  --roulette-wheel-center: #0f0e17;
+  --roulette-dialog: #292e3e;
+  --roulette-dialog-secondary: #1d2033;
+  --roulette-dialog-secondary-border: #353b52;
+  --sidebar: #111827;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1f2937;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #8b5cf6;
 }
 
 @layer base {
@@ -152,5 +186,10 @@
   input[type='number'] {
     -moz-appearance: textfield;
     appearance: textfield;
+  }
+  html,
+  body {
+    padding-right: 0px !important;
+    --removed-body-scroll-bar-size: 0px !important;
   }
 }
