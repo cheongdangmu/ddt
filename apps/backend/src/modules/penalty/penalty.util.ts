@@ -55,14 +55,22 @@ export function calculatePenaltyTier(
     // 최고 등급 (maxPct === null)인 경우
     if (tier.maxPct === null) {
       if (escapePercent >= tier.minPct) {
-        return { penaltyTier: tier.tier, penaltyCount: tier.count, isForceAll: true };
+        return {
+          penaltyTier: tier.tier,
+          penaltyCount: tier.count,
+          isForceAll: true,
+        };
       }
       continue;
     }
 
     // 일반 구간 (minPct <= x < maxPct)
     if (escapePercent >= tier.minPct && escapePercent < tier.maxPct) {
-      return { penaltyTier: tier.tier, penaltyCount: tier.count, isForceAll: false };
+      return {
+        penaltyTier: tier.tier,
+        penaltyCount: tier.count,
+        isForceAll: false,
+      };
     }
   }
 
