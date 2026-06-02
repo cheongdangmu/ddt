@@ -74,28 +74,28 @@ export const MainPage = () => {
       <div className='absolute right-0 top-0 z-20 p-4'>
         {me?.role === 'user' ? (
           <Button
-            variant='outline'
+           variant='ghost'
             size='sm'
             asChild
-            className='border-[#914CFF]! text-white/80 hover:text-white'
+            className='border border-white/20 px-3 py-3 rounded-sm!'
           >
             <Link href='/mypage'>마이페이지</Link>
           </Button>
         ) : me?.role === 'guest' ? (
           <Button
-            variant='outline'
+            variant='ghost'
             size='sm'
             onClick={handleLogout}
-            className='border-[#914CFF]! text-white/80 hover:text-white'
+            className='border border-white/20 px-3 py-3 rounded-sm!'
           >
             로그아웃
           </Button>
         ) : (
           <Button
-            variant='outline'
+            variant='ghost'
             size='sm'
             onClick={handleOpenTerms}
-            className='border-[#914CFF]! text-white/80 hover:text-white'
+            className='border border-white/20 px-3 py-3 rounded-sm!'
           >
             로그인
           </Button>
