@@ -79,23 +79,23 @@ export const TermsPage = () => {
   return (
     <CenterLayout maxWidthClass='md:max-w-md'>
       <div className='w-full flex items-center mb-10'>
-        <h1 className='flex-1 text-center font-bold'>?쎄? ?숈쓽</h1>
+        <h1 className='flex-1 text-center font-bold'>약관 동의</h1>
       </div>
 
       <div className='text-center mb-10'>
         <div className='flex justify-center mb-10 md:mb-14'>
           <Image
             src='/images/logo.webp'
-            alt='媛먯삦 濡쒓퀬'
+            alt='감옥 로고'
             width={150}
             height={60}
             className='md:w-[180px] h-auto'
           />
         </div>
         <p className='text-gray-400'>
-          ?쒕퉬???댁슜???꾪빐
+          서비스 이용을 위해
           <br />
-          ?쎄????숈쓽??二쇱꽭??
+          약관에 동의해 주세요.
         </p>
       </div>
 
@@ -107,7 +107,7 @@ export const TermsPage = () => {
             onCheckedChange={handleAllCheck}
           />
           <label htmlFor='all' className='ml-3 font-semibold cursor-pointer'>
-            ?쎄? ?꾩껜?숈쓽
+            약관 전체동의
           </label>
         </div>
 
@@ -119,7 +119,7 @@ export const TermsPage = () => {
               onCheckedChange={(c) => updateAgreement('termsOfService', !!c)}
             />
             <label htmlFor='terms' className='ml-3 cursor-pointer'>
-              ?쒕퉬???댁슜?쎄? <span className='text-red-500'>(?꾩닔)</span>
+              서비스 이용약관 <span className='text-red-500'>(필수)</span>
             </label>
           </div>
           <ChevronRight className='text-gray-500' />
@@ -133,8 +133,8 @@ export const TermsPage = () => {
               onCheckedChange={(c) => updateAgreement('privacyPolicy', !!c)}
             />
             <label htmlFor='privacy' className='ml-3 cursor-pointer'>
-              媛쒖씤?뺣낫 ?섏쭛 諛??댁슜?숈쓽{' '}
-              <span className='text-red-500'>(?꾩닔)</span>
+              개인정보 수집 및 이용동의{' '}
+              <span className='text-red-500'>(필수)</span>
             </label>
           </div>
           <ChevronRight className='text-gray-500' />
@@ -148,7 +148,7 @@ export const TermsPage = () => {
               onCheckedChange={(c) => updateAgreement('ageVerification', !!c)}
             />
             <label htmlFor='isOver14' className='ml-3 cursor-pointer'>
-              留?14???댁긽 ?뺤씤 <span className='text-red-500'>(?꾩닔)</span>
+              만 14세 이상 확인 <span className='text-red-500'>(필수)</span>
             </label>
           </div>
           <ChevronRight className='text-gray-500' />
@@ -161,11 +161,11 @@ export const TermsPage = () => {
         onClick={handleGoogleLogin}
       >
         <span className='mr-2'>G</span>
-        {isLoading ? '泥섎━ 以?..' : 'Google濡?怨꾩냽?섍린'}
+        {isLoading ? '처리 중...' : 'Google로 계속하기'}
       </Button>
 
       <p className='text-center text-xs text-gray-500 mt-6 flex items-center justify-center gap-1'>
-        ?덉쟾??蹂댁븞 ?섍꼍?먯꽌 濡쒓렇??吏꾪뻾 以?
+        안전한 보안 환경에서 로그인 진행 중
       </p>
     </CenterLayout>
   );
