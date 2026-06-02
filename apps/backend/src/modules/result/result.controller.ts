@@ -32,7 +32,7 @@ export class ResultController {
   @ApiParam({
     name: 'roomCode',
     description: '방 코드 (8자리)',
-    example: 'V1StGXR8',
+    example: 'TESTROOM',
   })
   @ApiSuccessResponse(ResultResponseDto, {
     status: 200,

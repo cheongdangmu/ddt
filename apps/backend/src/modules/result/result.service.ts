@@ -113,7 +113,10 @@ export class ResultService {
           : idx + 1;
     });
 
-    const penaltyMemberCount = members.filter((m) => m.penaltyTier > 0).length;
+    // 실제 벌칙이 배정된(count 합계 > 0) 멤버 수 — tier1은 벌칙 0개이므로 tier 기준 사용 금지
+    const penaltyMemberCount = members.filter(
+      (m) => m.penalties.totalCount > 0,
+    ).length;
 
     return {
       roomCode: room.code,
