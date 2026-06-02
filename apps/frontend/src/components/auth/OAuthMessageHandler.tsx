@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { getAuthApi } from '@/api/generated/인증-auth-api/인증-auth-api';
 import { useAuthStore } from '@/store/useAuthStore';
 
 type TermsAgreement = {
@@ -40,20 +42,16 @@ export function OAuthMessageHandler() {
   useEffect(() => {
     const apiUrl = getApiUrl();
     const allowedOrigins = new Set([window.location.origin, getOrigin(apiUrl)]);
+    const authApi = getAuthApi(axios.create({ baseURL: apiUrl }));
 
     const agreeTerms = async (token: string, agreement: TermsAgreement) => {
-      const response = await fetch(`${apiUrl}/auth/terms`, {
-        method: 'POST',
+      await authApi.authControllerAgreeTerms(agreement, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(agreement),
+        validateStatus: (status) =>
+          (status >= 200 && status < 300) || status === 409,
       });
-
-      if (!response.ok && response.status !== 409) {
-        throw new Error('Terms agreement failed');
-      }
     };
 
     const handleMessage = (event: MessageEvent) => {
