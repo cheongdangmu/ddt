@@ -292,8 +292,7 @@ export const MyPage = () => {
               아니요
             </Button>
             <Button
-              className='flex-1 h-12 rounded-[14px] font-bold text-white'
-              style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)' }}
+              className='flex-1 h-12 rounded-[14px] font-bold'
               onClick={async () => {
                 setIsLogoutConfirmOpen(false);
                 await executeLogout();

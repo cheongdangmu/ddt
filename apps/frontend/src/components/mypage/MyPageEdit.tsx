@@ -190,12 +190,7 @@ export function MyPageEdit() {
           <Button
             onClick={handleSave}
             disabled={!isValid || isSaving || isLoading}
-            style={{
-              background: isValid
-                ? 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)'
-                : undefined,
-            }}
-            className='w-full h-14 rounded-[14px] text-base font-bold text-white hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
+            className='w-full h-14 rounded-[14px] text-base font-bold hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
           >
             {isSaving ? '저장 중...' : '저장하기'}
           </Button>

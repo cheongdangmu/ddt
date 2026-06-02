@@ -203,10 +203,7 @@ export const JoinRoom = () => {
           <p className='text-sm text-white/50'>방 코드를 다시 확인해주세요.</p>
           <Button
             onClick={() => router.push('/')}
-            className='mt-3 h-12 rounded-[14px] px-6 font-bold text-white'
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-            }}
+            className='mt-3 h-12 rounded-[14px] px-6 font-bold'
           >
             홈으로
           </Button>
@@ -236,10 +233,7 @@ export const JoinRoom = () => {
               게스트로 시작
             </Button>
             <Button
-              className='flex-1 h-12 rounded-[14px] font-bold text-white'
-              style={{
-                background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-              }}
+              className='flex-1 h-12 rounded-[14px] font-bold'
               onClick={handleGoogleLogin}
             >
               구글 로그인
@@ -259,13 +253,7 @@ export const JoinRoom = () => {
           <Button
             disabled={!isValid || joinMutation.isPending}
             onClick={handleSubmit}
-            style={{
-              background: isValid
-                ? 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)'
-                : undefined,
-              boxShadow: isValid ? '0 0 40px rgba(124,58,237,0.45)' : undefined,
-            }}
-            className='w-full h-14 rounded-[24px] text-base font-bold text-white hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
+            className='w-full h-14 rounded-[24px] text-base font-bold hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
           >
             {joinMutation.isPending ? '입장 중...' : '입장하기'}
           </Button>

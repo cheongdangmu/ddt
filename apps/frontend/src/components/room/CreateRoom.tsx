@@ -203,10 +203,7 @@ export const CreateRoom = () => {
           </p>
           <Button
             onClick={handleOpenLogin}
-            className='mt-3 h-12 rounded-[14px] px-6 font-bold text-white'
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-            }}
+            className='mt-3 h-12 rounded-[14px] px-6 font-bold'
           >
             로그인하기
           </Button>
@@ -233,10 +230,6 @@ export const CreateRoom = () => {
         bottomButton={
           step === 'complete' ? (
             <Button
-              style={{
-                background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-                boxShadow: '0 0 40px rgba(124,58,237,0.45)',
-              }}
               className='w-full h-14 rounded-[24px] text-base font-bold hover:scale-[1.01] active:scale-[0.98]'
               onClick={() => router.push(`/room/${roomCode}`)}
             >
@@ -246,14 +239,6 @@ export const CreateRoom = () => {
             <Button
               disabled={!isValid || createRoomMutation.isPending}
               onClick={handleSubmit}
-              style={{
-                background: isValid
-                  ? 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)'
-                  : undefined,
-                boxShadow: isValid
-                  ? '0 0 40px rgba(124,58,237,0.45)'
-                  : undefined,
-              }}
               className='w-full h-14 rounded-[24px] text-base font-bold hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
             >
               {createRoomMutation.isPending ? '생성 중...' : '방 만들기'}
@@ -354,9 +339,6 @@ export const CreateRoom = () => {
             </Button>
             <Button
               className='flex-1 h-12 rounded-[14px] font-bold'
-              style={{
-                background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-              }}
               onClick={() => {
                 setShowExitDialog(false);
                 onBack?.();

@@ -141,11 +141,7 @@ export const MainPage = () => {
           <Button
             size='main'
             onClick={() => router.push('/room')}
-            className='w-full rounded-[14px] font-bold text-white'
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-              boxShadow: '0 0 40px rgba(124,58,237,0.45)',
-            }}
+            className='w-full rounded-[14px] font-bold'
           >
             방만들기
           </Button>
