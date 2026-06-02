@@ -16,8 +16,8 @@ export class RouletteService {
   async spinRoulette(
     roomCode: string,
     spinIndex: number,
-    userId?: string,
-    guestToken?: string,
+    userId: string | null,
+    guestToken: string | null,
   ) {
     const isGuest = !userId && !!guestToken;
 
@@ -74,7 +74,11 @@ export class RouletteService {
     };
   }
 
-  async exitRoulette(roomCode: string, userId?: string, guestToken?: string) {
+  async exitRoulette(
+    roomCode: string,
+    userId: string | null,
+    guestToken: string | null,
+  ) {
     const isGuest = !userId && !!guestToken;
 
     const member = await this.prisma.roomMember.findFirst({
@@ -86,19 +90,24 @@ export class RouletteService {
 
     if (!member) throw new BadRequestException('멤버 정보를 찾을 수 없습니다.');
 
-    // 공개 처리 전 미공개 목록 확보 (반환용)
-    const unrevealed = await this.prisma.resultPenalty.findMany({
-      where: { roomMemberId: member.id, isRevealed: false },
-      select: { content: true, count: true },
-    });
-
-    if (unrevealed.length === 0) {
-      throw new BadRequestException('룰렛 처리가 이미 완료되었습니다.');
-    }
-
-    await this.prisma.resultPenalty.updateMany({
-      where: { roomMemberId: member.id, isRevealed: false },
-      data: { isRevealed: true },
+    // 미공개 목록 확보(반환용) + 일괄 공개를 원자적으로 처리.
+    // updateMany의 count를 권위로 삼아, 동시 호출의 패자(count=0)는 아래 broadcast 없이 차단(spin과 대칭).
+    const unrevealed = await this.prisma.$transaction(async (tx) => {
+      const rows = await tx.resultPenalty.findMany({
+        where: { roomMemberId: member.id, isRevealed: false },
+        select: { content: true, count: true },
+      });
+      if (rows.length === 0) {
+        throw new BadRequestException('룰렛 처리가 이미 완료되었습니다.');
+      }
+      const { count } = await tx.resultPenalty.updateMany({
+        where: { roomMemberId: member.id, isRevealed: false },
+        data: { isRevealed: true },
+      });
+      if (count === 0) {
+        throw new BadRequestException('룰렛 처리가 이미 완료되었습니다.');
+      }
+      return rows;
     });
 
     const penaltyItemMap = this.buildPenaltyItemMap(member);
@@ -117,9 +126,14 @@ export class RouletteService {
   private buildPenaltyItemMap(member: {
     room: { template: { penalties: { content: string; id: string }[] } | null };
   }): Map<string, string> {
-    return new Map(
-      member.room.template?.penalties.map((p) => [p.content, p.id]) ?? [],
-    );
+    // 동일 content가 풀에 중복되면 '첫 항목' id를 유지한다 (DTO 명세 일치).
+    const map = new Map<string, string>();
+    for (const p of member.room.template?.penalties ?? []) {
+      if (!map.has(p.content)) {
+        map.set(p.content, p.id);
+      }
+    }
+    return map;
   }
 
   /** 룰렛 완료 시 방 전체에 공개 결과 브로드캐스트 */

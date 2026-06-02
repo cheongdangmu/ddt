@@ -19,7 +19,8 @@ export class SpinRouletteResponseDto {
     example: 'a1b2c3d4-...',
     nullable: true,
     type: String,
-    description: '휠 정지 위치 매핑용 PENALTY_ITEM.id (풀에 없으면 null)',
+    description:
+      '휠 정지 위치 매핑용 PENALTY_ITEM.id (풀에 없으면 null, 풀 내 동일 content 중복 시 첫 항목 기준)',
   })
   penaltyItemId!: string | null;
 

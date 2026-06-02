@@ -7,6 +7,7 @@ import {
 import * as Sentry from '@sentry/nestjs';
 import { PrismaService } from '../../common/prisma.service';
 import { PenaltyService } from '../penalty/penalty.service';
+import { RoomGateway } from '../gateway/room/room.gateway';
 import type { Prisma } from '@prisma/client';
 
 type RoomWithDetails = NonNullable<
@@ -30,6 +31,7 @@ export class ResultService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly penaltyService: PenaltyService,
+    private readonly roomGateway: RoomGateway,
   ) {}
 
   private async fetchRoom(roomCode: string) {
@@ -71,6 +73,9 @@ export class ResultService {
         (acc, p) => acc + p.count,
         0,
       );
+      // 남은 룰렛 스핀 수 = 미공개 '행(row)' 개수 (룰렛은 content 행 단위 1회 공개, count는 표시용 배수)
+      const remainingSpins =
+        m.result?.penalties.filter((p) => !p.isRevealed).length ?? 0;
 
       return {
         memberId: m.id,
@@ -84,6 +89,7 @@ export class ResultService {
         penaltyTier: m.result?.penaltyTier ?? 0,
         isAllClear: totalEscapeMs === 0,
         penaltyCount,
+        remainingSpins,
         gaveUpAt: m.gaveUpAt,
         penalties: {
           totalCount:
@@ -129,24 +135,63 @@ export class ResultService {
    * 전환하여 자리를 뜬 멤버의 벌칙도 전원에게 보이도록 보강한다.
    * @returns 실제 공개 처리된 항목이 있었는지 여부
    */
-  private async revealExpiredPenalties(room: RoomWithDetails): Promise<boolean> {
+  private async revealExpiredPenalties(
+    room: RoomWithDetails,
+  ): Promise<boolean> {
     if (!room.endedAt) return false;
-    if (Date.now() <= room.endedAt.getTime() + ROULETTE_TIMEOUT_MS) return false;
+    if (Date.now() <= room.endedAt.getTime() + ROULETTE_TIMEOUT_MS)
+      return false;
 
     const memberIds = room.roomMembers.map((m) => m.id);
     if (memberIds.length === 0) return false;
+
+    // 자동공개로 상태가 바뀔 멤버(미공개 보유) — 로드된 데이터로 판정, 추가 쿼리 없음
+    const affected = room.roomMembers.filter((m) =>
+      m.result?.penalties.some((p) => !p.isRevealed),
+    );
 
     const { count } = await this.prisma.resultPenalty.updateMany({
       where: { roomMemberId: { in: memberIds }, isRevealed: false },
       data: { isRevealed: true },
     });
+
+    // 타임아웃 자동공개도 spin/exit과 동일하게 실시간 동기화 (멱등 페이로드)
+    if (count > 0) {
+      for (const m of affected) {
+        this.roomGateway.server.to(room.code).emit('result:revealed', {
+          memberId: m.id,
+          userId: m.userId,
+          nickname: m.nickname,
+          // 타임아웃은 전체 공개 → 그 멤버의 모든 벌칙이 공개분
+          penalties:
+            m.result?.penalties.map((p) => ({
+              content: p.content,
+              count: p.count,
+            })) ?? [],
+        });
+      }
+    }
     return count > 0;
   }
 
-  async getResult(roomCode: string, _userId?: string, _guestToken?: string) {
+  async getResult(
+    roomCode: string,
+    userId: string | null,
+    guestToken: string | null,
+  ) {
     let room = await this.fetchRoom(roomCode);
 
     if (!room) throw new NotFoundException('결과를 찾을 수 없습니다.');
+
+    // 멤버십 인가: 요청자가 해당 방 멤버가 아니면 차단 (로드된 members 재사용, 추가 쿼리 없음)
+    const isMember = room.roomMembers.some(
+      (m) =>
+        (userId !== null && m.userId === userId) ||
+        (guestToken !== null && m.guestToken === guestToken),
+    );
+    if (!isMember)
+      throw new ForbiddenException('해당 방의 결과 조회 권한이 없습니다.');
+
     if (room.phase !== 'result')
       throw new ForbiddenException(
         '세션이 종료된 후 결과를 확인할 수 있습니다.',

@@ -1,8 +1,7 @@
-import { Controller, Post, Param, Body, Req, Headers } from '@nestjs/common';
+import { Controller, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -16,9 +15,10 @@ import {
 } from './dto/roulette.dto';
 import { ApiSuccessResponse } from '../../common/swagger/api-success-response.decorator';
 import type { Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 
 interface AuthenticatedRequest extends Request {
-  user?: { id: string };
+  user: { id: string; email: string; role: string };
 }
 
 @ApiTags('Roulette API (벌칙 룰렛)')
@@ -27,11 +27,6 @@ export class RouletteController {
   constructor(private readonly rouletteService: RouletteService) {}
 
   @ApiBearerAuth()
-  @ApiHeader({
-    name: 'X-Guest-Token',
-    required: false,
-    description: '게스트 토큰 (회원은 생략)',
-  })
   @ApiOperation({
     summary: '룰렛 실행',
     description: 'spinIndex(1부터)의 벌칙을 공개합니다.',
@@ -52,27 +47,23 @@ export class RouletteController {
   })
   @ApiResponse({ status: 409, description: '이미 실행된 룰렛입니다.' })
   @Post(':roomCode/roulette/spin')
+  @UseGuards(AuthGuard('jwt'))
   async spinRoulette(
     @Param('roomCode') roomCode: string,
     @Body() dto: SpinRouletteDto,
     @Req() req: AuthenticatedRequest,
-    @Headers('x-guest-token') guestToken?: string,
   ) {
+    const isGuest = req.user.role === 'guest';
     const data = await this.rouletteService.spinRoulette(
       roomCode,
       dto.spinIndex,
-      req.user?.id,
-      guestToken,
+      isGuest ? null : req.user.id,
+      isGuest ? req.user.id : null,
     );
     return { message: '룰렛이 스핀되었습니다.', data };
   }
 
   @ApiBearerAuth()
-  @ApiHeader({
-    name: 'X-Guest-Token',
-    required: false,
-    description: '게스트 토큰 (회원은 생략)',
-  })
   @ApiOperation({
     summary: '룰렛 이탈 처리 (Rage-quit)',
     description: '룰렛 도중 이탈 시 남은 벌칙을 모두 자동 공개 처리합니다.',
@@ -91,15 +82,16 @@ export class RouletteController {
     description: '멤버 정보를 찾을 수 없거나 이미 처리 완료되었습니다.',
   })
   @Post(':roomCode/roulette/exit')
+  @UseGuards(AuthGuard('jwt'))
   async exitRoulette(
     @Param('roomCode') roomCode: string,
     @Req() req: AuthenticatedRequest,
-    @Headers('x-guest-token') guestToken?: string,
   ) {
+    const isGuest = req.user.role === 'guest';
     const data = await this.rouletteService.exitRoulette(
       roomCode,
-      req.user?.id,
-      guestToken,
+      isGuest ? null : req.user.id,
+      isGuest ? req.user.id : null,
     );
     return { message: '룰렛이 처리되었습니다.', data };
   }

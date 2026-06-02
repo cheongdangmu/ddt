@@ -45,10 +45,17 @@ export class ResultMemberDto {
   @ApiProperty({ example: 1, description: '이탈 시간 기준 순위' })
   rank!: number;
 
-  @ApiProperty({ example: 60000, description: '총 이탈 시간(ms)' })
+  @ApiProperty({
+    example: 60000,
+    description:
+      '총 이탈 시간(ms). 포기자(gaveUpAt≠null)는 포기~세션종료 잔여시간이 합산됨',
+  })
   totalEscapeMs!: number;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({
+    example: 1,
+    description: '벌칙 등급(0=All Clear). 포기자는 최고 등급 강제',
+  })
   penaltyTier!: number;
 
   @ApiProperty({ example: false })
@@ -58,6 +65,12 @@ export class ResultMemberDto {
   penaltyCount!: number;
 
   @ApiProperty({
+    example: 0,
+    description: '남은 룰렛 스핀 수(미공개 행 개수). 0이면 룰렛 스킵',
+  })
+  remainingSpins!: number;
+
+  @ApiProperty({
     example: null,
     nullable: true,
     type: String,
@@ -65,7 +78,11 @@ export class ResultMemberDto {
   })
   gaveUpAt!: Date | null;
 
-  @ApiProperty({ type: ResultMemberPenaltiesDto })
+  @ApiProperty({
+    type: ResultMemberPenaltiesDto,
+    description:
+      '포기자/최고등급은 룰렛 없이 즉시 공개되어 items에 바로 포함됨(remainingSpins=0)',
+  })
   penalties!: ResultMemberPenaltiesDto;
 }
 
