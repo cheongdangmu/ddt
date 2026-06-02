@@ -37,7 +37,7 @@ export class RouletteController {
   @ApiParam({
     name: 'roomCode',
     description: '방 코드 (8자리)',
-    example: 'V1StGXR8',
+    example: 'TESTROOM',
   })
   @ApiBody({ type: SpinRouletteDto })
   @ApiSuccessResponse(SpinRouletteResponseDto, {
@@ -80,7 +80,7 @@ export class RouletteController {
   @ApiParam({
     name: 'roomCode',
     description: '방 코드 (8자리)',
-    example: 'V1StGXR8',
+    example: 'TESTROOM',
   })
   @ApiSuccessResponse(ExitRouletteResponseDto, {
     status: 201,
