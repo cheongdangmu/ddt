@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { FormInput } from '@/components/ui/form-input';
 import {
   Dialog,
   DialogContent,
@@ -62,28 +62,28 @@ export const MainPage = () => {
       <div className='absolute right-0 top-0 z-20 p-4'>
         {isLoggedIn && me?.role === 'user' ? (
           <Button
-            variant='outline'
+           variant='ghost'
             size='sm'
             asChild
-            className='border-[#914CFF]! text-white/80 hover:text-white'
+            className='border border-white/20 px-3 py-3 rounded-sm!'
           >
             <Link href='/mypage'>마이페이지</Link>
           </Button>
         ) : isLoggedIn && me?.role === 'guest' ? (
           <Button
-            variant='outline'
+            variant='ghost'
             size='sm'
             onClick={handleLogout}
-            className='border-[#914CFF]! text-white/80 hover:text-white'
+            className='border border-white/20 px-3 py-3 rounded-sm!'
           >
             로그아웃
           </Button>
         ) : (
           <Button
-            variant='outline'
+            variant='ghost'
             size='sm'
             onClick={handleOpenTerms}
-            className='border-[#914CFF]! text-white/80 hover:text-white'
+            className='border border-white/20 px-3 py-3 rounded-sm!'
           >
             로그인
           </Button>
@@ -129,11 +129,7 @@ export const MainPage = () => {
           <Button
             size='main'
             onClick={() => router.push('/room')}
-            className='w-full rounded-[14px] font-bold text-white'
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-              boxShadow: '0 0 40px rgba(124,58,237,0.45)',
-            }}
+            className='w-full rounded-[14px] font-bold'
           >
             방만들기
           </Button>
@@ -149,7 +145,7 @@ export const MainPage = () => {
               초대받은 방 코드를 입력해주세요.
             </DialogDescription>
           </DialogHeader>
-          <Input
+          <FormInput
             type='text'
             placeholder='방 코드 8자리를 입력해주세요'
             maxLength={8}
@@ -158,12 +154,11 @@ export const MainPage = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleEnterByCode();
             }}
-            className='h-[52px] rounded-[16px] border-white/[0.12] bg-[#1A1A2E] px-4 text-sm text-white placeholder:text-white/30 focus-visible:border-[#8B5CF6] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/30'
           />
           <DialogFooter>
             <Button
-              variant='outline'
-              className='flex-1 h-12 rounded-[14px] border-white/[0.18] bg-transparent text-white/80 hover:bg-white/5'
+              variant='ghost'
+              className='flex-1 py-6! border border-white/20'
               onClick={() => setShowCodeDialog(false)}
             >
               취소
@@ -171,10 +166,7 @@ export const MainPage = () => {
             <Button
               disabled={!isCodeValid}
               onClick={handleEnterByCode}
-              className='flex-1 h-12 rounded-[14px] font-bold text-white'
-              style={{
-                background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
-              }}
+              className='flex-1 py-6!'
             >
               입장하기
             </Button>
