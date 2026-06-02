@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import { CenterLayout } from '@/components/layout/centerLayout';
@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const PENDING_TERMS_KEY = 'pending_google_terms_agreement';
+const EMPTY_TERMS_AGREEMENT: TermsAgreement = {
+  termsOfService: false,
+  privacyPolicy: false,
+  ageVerification: false,
+};
 
 type TermsAgreement = {
   termsOfService: boolean;
@@ -32,38 +37,33 @@ const readPendingTerms = (): TermsAgreement | null => {
 };
 
 const TermsPage = () => {
-  const [terms, setTerms] = useState(false);
-  const [privacy, setPrivacy] = useState(false);
-  const [isOver14, setIsOver14] = useState(false);
+  const [agreement, setAgreement] = useState<TermsAgreement>(
+    () => readPendingTerms() ?? EMPTY_TERMS_AGREEMENT,
+  );
   const [isLoading, setIsLoading] = useState(false);
 
-  const allChecked = terms && privacy && isOver14;
+  const allChecked =
+    agreement.termsOfService &&
+    agreement.privacyPolicy &&
+    agreement.ageVerification;
 
   const handleAllCheck = () => {
     const newState = !allChecked;
-    setTerms(newState);
-    setPrivacy(newState);
-    setIsOver14(newState);
+    setAgreement({
+      termsOfService: newState,
+      privacyPolicy: newState,
+      ageVerification: newState,
+    });
   };
 
-  useEffect(() => {
-    const pendingTerms = readPendingTerms();
-    if (!pendingTerms) return;
-
-    setTerms(pendingTerms.termsOfService);
-    setPrivacy(pendingTerms.privacyPolicy);
-    setIsOver14(pendingTerms.ageVerification);
-  }, []);
+  const updateAgreement = (key: keyof TermsAgreement, value: boolean) => {
+    setAgreement((current) => ({ ...current, [key]: value }));
+  };
 
   const handleGoogleLogin = () => {
     if (!allChecked) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const agreement = {
-      termsOfService: terms,
-      privacyPolicy: privacy,
-      ageVerification: isOver14,
-    };
 
     sessionStorage.setItem(PENDING_TERMS_KEY, JSON.stringify(agreement));
     window.opener?.postMessage(
@@ -114,8 +114,8 @@ const TermsPage = () => {
           <div className='flex items-center'>
             <Checkbox
               id='terms'
-              checked={terms}
-              onCheckedChange={(c) => setTerms(!!c)}
+              checked={agreement.termsOfService}
+              onCheckedChange={(c) => updateAgreement('termsOfService', !!c)}
             />
             <label htmlFor='terms' className='ml-3 cursor-pointer'>
               서비스 이용약관 <span className='text-red-500'>(필수)</span>
@@ -128,8 +128,8 @@ const TermsPage = () => {
           <div className='flex items-center'>
             <Checkbox
               id='privacy'
-              checked={privacy}
-              onCheckedChange={(c) => setPrivacy(!!c)}
+              checked={agreement.privacyPolicy}
+              onCheckedChange={(c) => updateAgreement('privacyPolicy', !!c)}
             />
             <label htmlFor='privacy' className='ml-3 cursor-pointer'>
               개인정보 수집 및 이용동의{' '}
@@ -143,8 +143,8 @@ const TermsPage = () => {
           <div className='flex items-center'>
             <Checkbox
               id='isOver14'
-              checked={isOver14}
-              onCheckedChange={(c) => setIsOver14(!!c)}
+              checked={agreement.ageVerification}
+              onCheckedChange={(c) => updateAgreement('ageVerification', !!c)}
             />
             <label htmlFor='isOver14' className='ml-3 cursor-pointer'>
               만 14세 이상 확인 <span className='text-red-500'>(필수)</span>
