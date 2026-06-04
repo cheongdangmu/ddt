@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { MobileLayout } from '@/components/layout/mobileLayout';
@@ -25,14 +25,17 @@ export default function ImprisonmentPage() {
   const router = useRouter();
   const params = useParams();
 
-  const roomCode = params.id as string;
+  const roomCode = params.code as string;
   const identifier =
     typeof document !== 'undefined'
       ? document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1] ||
         'guest_token'
       : '';
 
-  const { timeLeft, mode, currentSession } = useTimerSync(roomCode, identifier);
+  const { timeLeft, mode, currentSession, isSynced } = useTimerSync(
+    roomCode,
+    identifier,
+  );
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -57,11 +60,17 @@ export default function ImprisonmentPage() {
       });
       localStorage.removeItem('ddt_active_session');
       setIsModalOpen(false);
-      router.push(`/result/${roomCode}`);
+      router.push('/');
     } catch (error) {
       console.error('포기 처리 실패:', error);
     }
   };
+
+  useEffect(() => {
+    if (!isSynced || timeLeft > 0) return;
+
+    router.replace(`/room/${roomCode}/semi-result`);
+  }, [isSynced, timeLeft, roomCode, router]);
 
   const theme = {
     textColor: isFocus ? 'text-primary' : 'text-success',

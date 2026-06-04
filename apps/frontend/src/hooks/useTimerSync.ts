@@ -14,6 +14,7 @@ export function useTimerSync(roomCode: string, identifier: string) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [mode, setMode] = useState<'FOCUS' | 'BREAK'>('FOCUS');
   const [currentSession, setCurrentSession] = useState(1);
+  const [isSynced, setIsSynced] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   const modeRef = useRef(mode);
@@ -39,6 +40,7 @@ export function useTimerSync(roomCode: string, identifier: string) {
       setTimeLeft(data.timeLeft);
       setMode(data.mode);
       setCurrentSession(data.currentSession);
+      setIsSynced(true);
     });
 
     const handleVisibilityChange = () => {
@@ -76,5 +78,5 @@ export function useTimerSync(roomCode: string, identifier: string) {
     }
   }, [mode, timeLeft]);
 
-  return { timeLeft, mode, currentSession };
+  return { timeLeft, mode, currentSession, isSynced };
 }
