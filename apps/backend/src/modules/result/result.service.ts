@@ -82,6 +82,7 @@ export class ResultService {
       return {
         memberId: m.id,
         userId: m.userId,
+        guestToken: m.guestToken,
         nickname: m.nickname,
         profileImage: m.profileImage,
         isHost: m.isHost,
