@@ -27,6 +27,13 @@ function formatTime(minutes: number): string {
   return mins === 0 ? `${hours}시간` : `${hours}시간 ${mins}분`;
 }
 
+// 자연수만 허용: 소수점(.), 부호(+/-), 지수(e/E) 키 입력을 차단한다.
+function blockNonInteger(e: React.KeyboardEvent<HTMLInputElement>): void {
+  if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+    e.preventDefault();
+  }
+}
+
 export default function TimerSettings({ yjs }: TimerSettingsProps) {
   const me = useAuthStore((state) => state.me);
   const members = useRoomStore((state) => state.members);
@@ -60,6 +67,9 @@ export default function TimerSettings({ yjs }: TimerSettingsProps) {
             <Input
               id='focusMin'
               type='number'
+              min={1}
+              max={120}
+              step={1}
               {...register('focusMin', {
                 required: true,
                 min: 1,
@@ -77,6 +87,7 @@ export default function TimerSettings({ yjs }: TimerSettingsProps) {
               }
               onFocus={() => handleFocus('focusMin', me.id, myNickname)}
               onBlur={handleBlur}
+              onKeyDown={blockNonInteger}
               onChange={(e) => {
                 const val = Number(e.target.value);
                 setValue('focusMin', val);
@@ -98,6 +109,8 @@ export default function TimerSettings({ yjs }: TimerSettingsProps) {
             <Input
               id='breakMin'
               type='number'
+              min={1}
+              step={1}
               {...register('breakMin', { required: true, min: 1 })}
               className={cn(
                 fieldOwners['breakMin'] && 'outline-2 outline-offset-1',
@@ -111,6 +124,7 @@ export default function TimerSettings({ yjs }: TimerSettingsProps) {
               }
               onFocus={() => handleFocus('breakMin', me.id, myNickname)}
               onBlur={handleBlur}
+              onKeyDown={blockNonInteger}
               onChange={(e) => {
                 const val = Number(e.target.value);
                 setValue('breakMin', val);
@@ -132,6 +146,8 @@ export default function TimerSettings({ yjs }: TimerSettingsProps) {
             <Input
               id='rounds'
               type='number'
+              min={1}
+              step={1}
               {...register('rounds', { required: true, min: 1 })}
               className={cn(
                 fieldOwners['rounds'] && 'outline-2 outline-offset-1',
@@ -145,6 +161,7 @@ export default function TimerSettings({ yjs }: TimerSettingsProps) {
               }
               onFocus={() => handleFocus('rounds', me.id, myNickname)}
               onBlur={handleBlur}
+              onKeyDown={blockNonInteger}
               onChange={(e) => {
                 const val = Number(e.target.value);
                 setValue('rounds', val);

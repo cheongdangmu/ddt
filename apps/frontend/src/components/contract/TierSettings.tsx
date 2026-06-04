@@ -143,8 +143,8 @@ export default function TierSettings({ yjs }: TierSettingsProps) {
                       onBlur={handleBlur}
                       onChange={(e) => {
                         const val = Number(e.target.value);
-                        if (val < 1) return;
-                        updateTier(i, { count: Number(e.target.value) });
+                        if (val < 0) return;
+                        updateTier(i, { count: val });
                       }}
                     />
                     <span className='text-sm'>개</span>

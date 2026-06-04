@@ -61,7 +61,7 @@ const ContractForm = () => {
 
   const methods = useForm<ContractFormValues>({
     values: fields,
-    defaultValues: { focusMin: 0, breakMin: 0, rounds: 0 },
+    defaultValues: { focusMin: 1, breakMin: 1, rounds: 1 },
   });
 
   const handleLeaveRoom = async () => {

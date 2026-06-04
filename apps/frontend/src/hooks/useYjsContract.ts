@@ -29,9 +29,9 @@ export function useYjsContract(
 
   const [isConnected, setIsConnected] = useState(false);
   const [fields, setFields] = useState<ContractFields>({
-    focusMin: 0,
-    breakMin: 0,
-    rounds: 0,
+    focusMin: 1,
+    breakMin: 1,
+    rounds: 1,
   });
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [penalties, setPenalties] = useState<Penalty[]>([]);
@@ -101,9 +101,9 @@ export function useYjsContract(
 
     yjsFields.observe(() => {
       setFields({
-        focusMin: yjsFields.get('focusMin') ?? 0,
-        breakMin: yjsFields.get('breakMin') ?? 0,
-        rounds: yjsFields.get('rounds') ?? 0,
+        focusMin: yjsFields.get('focusMin') ?? 1,
+        breakMin: yjsFields.get('breakMin') ?? 1,
+        rounds: yjsFields.get('rounds') ?? 1,
       });
     });
 
@@ -189,7 +189,7 @@ export function useYjsContract(
           tier: yjsTiers.length + 1,
           minPct: newMinPct,
           maxPct: null,
-          count: 1,
+          count: 0,
         },
       ]);
     });
