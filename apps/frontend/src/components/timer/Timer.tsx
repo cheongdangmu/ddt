@@ -84,8 +84,8 @@ export default function Timer() {
     const adjustedNow = now + sessionInfo.serverOffset;
     const elapsed = adjustedNow - sessionInfo.startedAt;
     const totalMs =
-      (sessionInfo.focusMin + sessionInfo.breakMin) *
-      sessionInfo.totalRounds *
+      (sessionInfo.focusMin * sessionInfo.totalRounds +
+        sessionInfo.breakMin * Math.max(0, sessionInfo.totalRounds - 1)) *
       60 *
       1000;
 
@@ -126,10 +126,19 @@ export default function Timer() {
   const focusMs = sessionInfo.focusMin * 60 * 1000;
   const breakMs = sessionInfo.breakMin * 60 * 1000;
   const totalRounds = sessionInfo.totalRounds;
+  const totalMs =
+    focusMs * totalRounds + breakMs * Math.max(0, totalRounds - 1);
+  const clampedElapsed = Math.min(Math.max(0, elapsed), totalMs);
+  const lastRoundStartMs = cycleMs * Math.max(0, totalRounds - 1);
+  const isLastRound = clampedElapsed >= lastRoundStartMs;
 
-  const round = Math.min(Math.floor(elapsed / cycleMs) + 1, totalRounds);
-  const cycleElapsed = elapsed % cycleMs;
-  const isFocus = cycleElapsed < focusMs;
+  const round = isLastRound
+    ? totalRounds
+    : Math.floor(clampedElapsed / cycleMs) + 1;
+  const cycleElapsed = isLastRound
+    ? clampedElapsed - lastRoundStartMs
+    : clampedElapsed % cycleMs;
+  const isFocus = isLastRound || cycleElapsed < focusMs;
   const phaseRemainingMs = isFocus
     ? focusMs - cycleElapsed
     : cycleMs - cycleElapsed;
