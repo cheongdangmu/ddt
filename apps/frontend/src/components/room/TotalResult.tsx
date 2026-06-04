@@ -9,6 +9,7 @@ import { getResultApi } from '@/api/generated/result-api-결과-조회/result-ap
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -101,6 +102,20 @@ const isGuestToken = () => {
   }
 };
 
+const getUnknownPenaltyCount = (member: ResultMember) =>
+  Math.max(0, member.penalties.totalCount - member.penaltyCount);
+
+const isMobileOrTablet = () => {
+  if (typeof navigator === 'undefined') return false;
+
+  const userAgent = navigator.userAgent.toLowerCase();
+  const hasTouchScreen =
+    navigator.maxTouchPoints > 1 &&
+    /macintosh/.test(userAgent);
+
+  return /android|iphone|ipad|ipod|mobile|tablet/.test(userAgent) || hasTouchScreen;
+};
+
 export function TotalResult() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
@@ -123,6 +138,17 @@ export function TotalResult() {
       const res = await getResultApi().resultControllerGetResult(params.code);
       return res.data as ResultResponse;
     },
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: 5 * 1000,
+    refetchInterval: (query) => {
+      const data = query.state.data as ResultResponse | undefined;
+      const hasUnknownPenalties = data?.members.some(
+        (member) => getUnknownPenaltyCount(member) > 0,
+      );
+
+      return hasUnknownPenalties ? 3000 : false;
+    },
   });
 
   useEffect(() => {
@@ -135,24 +161,42 @@ export function TotalResult() {
     (a, b) => a.rank - b.rank || b.totalEscapeMs - a.totalEscapeMs,
   );
   const penaltyMembers = rankedMembers.filter(
-    (member) => member.penaltyCount > 0,
+    (member) => member.penalties.totalCount > 0,
   );
+  const activePenaltyMember = selectedPenaltyMember
+    ? rankedMembers.find(
+        (member) => member.memberId === selectedPenaltyMember.memberId,
+      ) ?? selectedPenaltyMember
+    : null;
   const tiers = result?.rule?.tierConfig?.tiers ?? [];
   const totalTime = formatSessionTime(result?.totalSessionMs ?? null);
   const completedSessions = result?.rule
     ? `${result.completedRounds ?? 0} / ${result.rule.rounds}`
     : '-';
+  const isLoggedInUser = me?.role === 'user';
 
-  const handleShare = () => {
-    if (navigator.share) {
-      void navigator.share({
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+
+    if (isMobileOrTablet() && navigator.share) {
+      try {
+        await navigator.share({
         title: 'DDT 통합 결과',
-        url: window.location.href,
-      });
-      return;
+          text: `${result?.roomTitle ?? 'DDT'} 결과를 확인해보세요.`,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
     }
 
-    void navigator.clipboard.writeText(window.location.href);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('URL이 복사되었어요.');
+    } catch {
+      toast.error('URL 복사에 실패했습니다.');
+    }
   };
 
   const HeaderComponent = (
@@ -170,7 +214,7 @@ export function TotalResult() {
               통합 결과를 불러오는 중...
             </div>
           ) : null}
-          {isError ? (
+          {isError && !result ? (
             <div className='py-10 text-center text-sm text-destructive'>
               통합 결과를 불러오지 못했습니다.
             </div>
@@ -255,9 +299,9 @@ export function TotalResult() {
                       </div>
                     </div>
                     <span className='shrink-0 text-xs font-medium text-slate-400'>
-                      {member.penaltyCount > 0
-                        ? `벌칙 ${member.penaltyCount}개`
-                        : '-'}
+                      {member.totalEscapeMs > 0
+                        ? formatSessionTime(member.totalEscapeMs)
+                        : '이탈 없음'}
                     </span>
                   </div>
                 );
@@ -273,6 +317,7 @@ export function TotalResult() {
               {penaltyMembers.length > 0 ? (
                 penaltyMembers.map((member) => {
                   const isMe = me?.role === 'user' && member.userId === me.id;
+                  const unknownPenaltyCount = getUnknownPenaltyCount(member);
 
                   return (
                   <div
@@ -292,7 +337,8 @@ export function TotalResult() {
                       className='flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 text-sm font-bold text-white/85 transition-colors hover:bg-white/5'
                       aria-label={`${member.nickname} 벌칙 상세 보기`}
                     >
-                      벌칙 {member.penaltyCount}개
+                      벌칙 {member.penalties.totalCount}개
+                      {unknownPenaltyCount > 0 ? ` (미정 ${unknownPenaltyCount})` : ''}
                       <ChevronDown className='h-4 w-4 text-white/35' />
                     </button>
                   </div>
@@ -332,10 +378,10 @@ export function TotalResult() {
             <Button
               type='button'
               variant='secondary'
-              onClick={() => router.push('/mypage')}
+              onClick={() => router.push(isLoggedInUser ? '/mypage' : '/')}
               className='h-12 rounded-[14px] border border-white/10 bg-[#1A1F31] text-sm font-bold text-white/85'
             >
-              마이페이지
+              {isLoggedInUser ? '마이페이지' : '홈 화면으로 이동'}
             </Button>
           </div>
         </div>
@@ -346,23 +392,23 @@ export function TotalResult() {
         onOpenChange={(open) => !open && setSelectedPenaltyMember(null)}
       >
         <DialogContent className='w-[calc(100%-36px)] max-w-[354px] overflow-hidden rounded-xl border border-white/10 bg-[#1A1F31] p-0 text-left text-white/85'>
-          {selectedPenaltyMember ? (
+          {activePenaltyMember ? (
             <>
               <div className='px-4 pb-3 pt-4'>
                 <DialogTitle className='text-base font-bold text-white/90'>
-                  {selectedPenaltyMember.nickname}
+                  {activePenaltyMember.nickname}
                   {me?.role === 'user' &&
-                  selectedPenaltyMember.userId === me.id
+                  activePenaltyMember.userId === me.id
                     ? ' (본인)'
                     : ''}
                 </DialogTitle>
               </div>
 
               <div className='flex flex-col'>
-                {selectedPenaltyMember.penalties.items.map(
+                {activePenaltyMember.penalties.items.map(
                   (penalty, index) => (
                     <div
-                      key={`${selectedPenaltyMember.memberId}-${penalty.content}-${index}`}
+                      key={`${activePenaltyMember.memberId}-${penalty.content}-${index}`}
                       className='flex items-center gap-[9.7px] border-t border-white/5 px-4 py-[9px]'
                     >
                       <div className='h-9 w-9 shrink-0 rounded-[18px] bg-[#22293F]' />
@@ -377,6 +423,19 @@ export function TotalResult() {
                     </div>
                   ),
                 )}
+                {getUnknownPenaltyCount(activePenaltyMember) > 0 ? (
+                  <div className='flex items-center gap-[9.7px] border-t border-white/5 px-4 py-[9px]'>
+                    <div className='h-9 w-9 shrink-0 rounded-[18px] bg-[#22293F]' />
+                    <div className='flex min-w-0 flex-1 flex-col'>
+                      <span className='truncate text-sm font-medium text-white/50'>
+                        미정
+                      </span>
+                    </div>
+                    <span className='shrink-0 text-xs text-white/75'>
+                      {getUnknownPenaltyCount(activePenaltyMember)}개
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </>
           ) : null}
