@@ -41,7 +41,6 @@ export class RouletteService {
 
     const penalties = member.result.penalties;
 
-    // 이미 전부 공개된 상태면 더 돌릴 수 없음
     if (penalties.length > 0 && penalties.every((p) => p.isRevealed))
       throw new ConflictException('이미 완료된 룰렛입니다.');
 
@@ -50,7 +49,7 @@ export class RouletteService {
     if (spinIndex < 1 || spinIndex > totalSpins)
       throw new BadRequestException('해당 스핀의 벌칙이 존재하지 않습니다.');
 
-    // spinIndex번째 인스턴스가 속한 행(content)을 결정적으로 계산 (중간 상태 미저장)
+    // spinIndex번째 행을 결정적으로 탐색 (중간 상태 DB 미저장)
     let cumulative = 0;
     let target: (typeof penalties)[number] | undefined;
     for (const p of penalties) {
@@ -66,8 +65,7 @@ export class RouletteService {
     const remainingSpins = totalSpins - spinIndex;
     const isFinished = remainingSpins === 0;
 
-    // 마지막 스핀에서만 전체 공개 + 브로드캐스트 (중간 스핀은 DB 무변경).
-    // updateMany의 count를 권위로 삼아 동시 호출의 패자(count=0)는 broadcast 생략(exit과 대칭).
+    // 마지막 스핀에서만 전체 공개. updateMany count=0이면 동시 호출 패자로 broadcast 생략.
     if (isFinished) {
       const { count } = await this.prisma.resultPenalty.updateMany({
         where: { roomMemberId: member.id, isRevealed: false },
@@ -104,8 +102,7 @@ export class RouletteService {
 
     if (!member) throw new BadRequestException('멤버 정보를 찾을 수 없습니다.');
 
-    // 미공개 목록 확보(반환용) + 일괄 공개를 원자적으로 처리.
-    // updateMany의 count를 권위로 삼아, 동시 호출의 패자(count=0)는 아래 broadcast 없이 차단(spin과 대칭).
+    // 미공개 목록 확보 + 일괄 공개를 트랜잭션으로 처리. count=0이면 동시 호출 패자로 차단.
     const unrevealed = await this.prisma.$transaction(async (tx) => {
       const rows = await tx.resultPenalty.findMany({
         where: { roomMemberId: member.id, isRevealed: false },
@@ -145,10 +142,7 @@ export class RouletteService {
     return { autoRevealed: true, revealedPenalties };
   }
 
-  /**
-   * 중도포기자 룰렛 화면 데이터 조회 (phase 무관, Read-only).
-   * 포기자 본인 데이터만 반환. give-up 시점 산정 실패로 결과 미존재 시 fallback 재산정(멱등).
-   */
+  /** 중도포기자 룰렛 화면 데이터 조회. 결과 미존재 시 fallback 재산정(멱등). */
   async getGiveUpResult(
     roomCode: string,
     userId: string | null,
@@ -167,8 +161,7 @@ export class RouletteService {
     if (!member.gaveUpAt)
       throw new BadRequestException('중도포기한 유저만 조회할 수 있습니다.');
 
-    // fallback: give-up 시점 산정 실패로 결과 미존재 시 재산정 후 재조회
-    // (result.service의 hasUnprocessed fallback과 동일 패턴, 멱등 보장)
+    // fallback: give-up 시점 산정 실패로 result 미존재 시 재산정 후 재조회.
     if (!member.result) {
       try {
         await this.penaltyService.calculateAndSaveForGiveUp(
