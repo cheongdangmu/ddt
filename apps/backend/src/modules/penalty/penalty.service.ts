@@ -43,8 +43,10 @@ export class PenaltyService {
   }
 
   /**
-   * 세션 종료 시점에 호출. 로그인 멤버 전원의 벌칙 산정 후 DB 저장.
-   * 멱등성 보장: 트랜잭션 진입 전 기존 결과 일괄 조회 후 skip.
+   * 세션 종료 시점에 호출. 멤버 전원의 벌칙 산정 후 DB 저장.
+   * - 일반 멤버: 결과 미존재일 때만 생성(멱등 skip).
+   * - 중도포기자: 포기 시점 '계획 anchor' 임시 산정을 '실제 종료 anchor'로 재산정
+   *   (totalEscapeMs·penaltyTier만 update, 벌칙 행은 보존). 등급=시간기반, 개수=최대.
    */
   async calculateAndSave(roomCode: string): Promise<void> {
     const room = await this.prisma.room.findUnique({
@@ -83,7 +85,9 @@ export class PenaltyService {
 
     await this.prisma.$transaction(async (tx) => {
       for (const member of room.roomMembers) {
-        if (processedIds.has(member.id)) continue;
+        // give-up 멤버는 포기 시점에 '계획 anchor'로 임시 산정됨 → 종료 시 '실제 anchor'로 재산정.
+        // 그 외 이미 산정된 멤버는 멱등 skip.
+        if (processedIds.has(member.id) && !member.gaveUpAt) continue;
 
         let totalEscapeMs = 0;
 
@@ -132,15 +136,57 @@ export class PenaltyService {
           totalEscapeMs += giveUpMs;
         }
 
-        const { penaltyTier, penaltyCount, isForceAll } = member.gaveUpAt
-          ? resolveForfeitTier(tiers)
-          : calculatePenaltyTier(totalEscapeMs, focusMin, rounds, tiers);
-
         const existing = await tx.roomResult.findUnique({
           where: { roomMemberId: member.id },
         });
 
+        // 중도포기자: 등급 배지=이탈시간 기반, 벌칙 개수=항상 최대(최고등급 count), 즉시 전체공개.
+        if (member.gaveUpAt) {
+          const { penaltyTier } = calculatePenaltyTier(
+            totalEscapeMs,
+            focusMin,
+            rounds,
+            tiers,
+          );
+
+          if (existing) {
+            // 실제 종료 anchor로 재산정: 이탈시간·등급만 갱신.
+            // 벌칙 행(개수=최대)은 포기 시점 배정분을 재롤링 없이 보존.
+            await tx.roomResult.update({
+              where: { roomMemberId: member.id },
+              data: { totalEscapeMs, penaltyTier },
+            });
+          } else {
+            // 포기 시점 임시 산정이 실패했던 경우 → 전체 생성(개수=최대, 즉시공개).
+            const { penaltyCount, isForceAll } = resolveForfeitTier(tiers);
+            await tx.roomResult.create({
+              data: {
+                roomMemberId: member.id,
+                roomCode,
+                totalEscapeMs,
+                penaltyTier,
+              },
+            });
+            if (penaltyCount > 0 && penaltyPool.length > 0) {
+              const assigned = this.assignPenalties(penaltyPool, penaltyCount);
+              await tx.resultPenalty.createMany({
+                data: Object.entries(assigned).map(([content, count]) => ({
+                  roomMemberId: member.id,
+                  content,
+                  count,
+                  isRevealed: isForceAll,
+                })),
+                skipDuplicates: true,
+              });
+            }
+          }
+          continue;
+        }
+
+        // 일반 멤버: 등급/개수 모두 이탈시간 기반. 결과 미존재일 때만 생성.
         if (!existing) {
+          const { penaltyTier, penaltyCount, isForceAll } =
+            calculatePenaltyTier(totalEscapeMs, focusMin, rounds, tiers);
           await tx.roomResult.create({
             data: {
               roomMemberId: member.id,
@@ -168,9 +214,10 @@ export class PenaltyService {
   }
 
   /**
-   * 중도포기 시점에 호출. 해당 멤버 단독 벌칙 산정·저장 (forfeit 최고 등급, is_revealed=true).
-   * 산정 로직은 calculateAndSave의 멤버별 처리와 동일(휴식 제외 focus-only) — 세션 종료 시
-   * 동일 멤버를 멱등 skip하므로 통합결과와 totalEscapeMs가 일치한다.
+   * 중도포기 시점에 호출. 해당 멤버 단독 벌칙 '임시' 산정·저장 (is_revealed=true 즉시 전체공개).
+   * 등급 배지=이탈 누적시간 기반(calculatePenaltyTier), 벌칙 개수=항상 최대(최고등급 count).
+   * ⚠️ 포기 시점엔 endedAt이 없어 '계획 anchor'로 산정 → 세션 종료 시 calculateAndSave가
+   *    '실제 anchor'로 재산정(조기 종료 시 totalEscapeMs·등급 보정). 벌칙 개수(최대)는 불변.
    * (calculateAndSave 인라인 루프와 의도적으로 동일 형태 유지 — develop 산정 로직 보존)
    */
   async calculateAndSaveForGiveUp(
@@ -245,7 +292,9 @@ export class PenaltyService {
         }
       }
 
-      // 포기 시각 ~ 세션 종료 잔여 집중 시간 합산 (휴식 시간 제외)
+      // 포기 시각 ~ 세션 종료 잔여 집중 시간 합산 (휴식 시간 제외).
+      // [불변식] 호출부(timer.giveUp)가 열린 로그를 gaveUpAt으로 먼저 마감하므로,
+      // 위 로그 구간(≤gaveUpAt)과 아래 잔여 구간(≥gaveUpAt)은 겹치지 않는다(이중합산 불가).
       if (member.gaveUpAt) {
         totalEscapeMs += this.getEffectiveFocusEscapeMs(
           member.gaveUpAt.getTime(),
@@ -257,9 +306,18 @@ export class PenaltyService {
         );
       }
 
-      // 포기자는 항상 forfeit 최고 등급 (is_revealed=true 전체 공개)
-      const { penaltyTier, penaltyCount, isForceAll } =
-        resolveForfeitTier(tiers);
+      // 등급 배지: 이탈 누적시간 기반(최고등급 자동부여 폐지).
+      // 벌칙 개수: 항상 최대치(최고등급 count) — 중도포기 정책, 예외 없음.
+      // is_revealed=true 즉시 전체공개(포기자는 룰렛 미진행).
+      // ⚠️ 포기 시점은 '계획 anchor' 기반 임시 산정 — 세션 종료 시 calculateAndSave가 실제 anchor로 재산정.
+      const { penaltyTier } = calculatePenaltyTier(
+        totalEscapeMs,
+        focusMin,
+        rounds,
+        tiers,
+      );
+      const { penaltyCount } = resolveForfeitTier(tiers);
+      const isForceAll = true;
 
       const existing = await tx.roomResult.findUnique({
         where: { roomMemberId: member.id },

@@ -12,24 +12,6 @@ export type TierResult = {
 };
 
 /**
- * 계획된 세션 총 길이(ms). 마지막 라운드 뒤 break는 없으므로 break는 (rounds-1)회.
- * timer setTimeout(실제 종료 anchor)과 penalty의 endedAt fallback anchor가 공유하는 단일 출처.
- * → give-up 산정 시 totalEscapeMs가 통합결과와 일치하도록 보장한다.
- */
-export function calcSessionDurationMs(template: {
-  focusMin: number;
-  breakMin: number;
-  rounds: number;
-}): number {
-  return (
-    (template.focusMin * template.rounds +
-      template.breakMin * Math.max(0, template.rounds - 1)) *
-    60 *
-    1000
-  );
-}
-
-/**
  * Prisma Json 타입 → PenaltyTier[] 변환 (런타임 검증)
  */
 export function parseTierConfig(raw: unknown): PenaltyTier[] {
