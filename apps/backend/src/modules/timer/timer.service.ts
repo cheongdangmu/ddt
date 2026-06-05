@@ -57,10 +57,14 @@ export class TimerService {
     webpush.setVapidDetails(
       process.env.VAPID_SUBJECT!,
       process.env.VAPID_PUBLIC_KEY!,
-      process.env.VAPID_PRIVATE_KEY!
+      process.env.VAPID_PRIVATE_KEY!,
     );
   }
-    async savePushSubscription(roomCode: string, userId: string, subscription: any) {
+  async savePushSubscription(
+    roomCode: string,
+    userId: string,
+    subscription: any,
+  ) {
     await this.redis.instance.set(
       `push_sub:${roomCode}:${userId}`,
       JSON.stringify(subscription),
@@ -79,10 +83,12 @@ export class TimerService {
     const payload = JSON.stringify({ title, body });
 
     for (const userId of userIds) {
-      const subRaw = await this.redis.instance.get(`push_sub:${roomCode}:${userId}`);
+      const subRaw = await this.redis.instance.get(
+        `push_sub:${roomCode}:${userId}`,
+      );
       if (subRaw) {
         const subscription = JSON.parse(subRaw);
-        webpush.sendNotification(subscription, payload).catch(err => {
+        webpush.sendNotification(subscription, payload).catch((err) => {
           console.error(`푸시 전송 실패 (${userId}):`, err.message);
         });
       }
@@ -177,17 +183,17 @@ export class TimerService {
     this.yjsGateway.destroyRoom(roomCode);
 
     this.roomGateway.server.to(roomCode).emit('session:started', responseData);
-    
+
     const { focusMin, breakMin, rounds } = roomWithTemplate.template;
     for (let r = 1; r < rounds; r++) {
       const notifyTimeMs = ((focusMin + breakMin) * r - 1) * 60 * 1000;
-      
+
       if (notifyTimeMs > 0) {
         setTimeout(() => {
           this.sendPushToRoom(
             roomCode,
             '휴식이 1분 남았어요! ⏰',
-            '곧 집중 시간이 시작됩니다. 자리에 앉아주세요!'
+            '곧 집중 시간이 시작됩니다. 자리에 앉아주세요!',
           ).catch(console.error);
         }, notifyTimeMs);
       }

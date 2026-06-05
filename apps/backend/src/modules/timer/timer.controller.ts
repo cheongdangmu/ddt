@@ -168,7 +168,11 @@ export class TimerController {
     @Req() req: AuthenticatedRequest,
     @Body() subscription: any,
   ) {
-    await this.timerService.savePushSubscription(roomCode, req.user!.id, subscription);
+    await this.timerService.savePushSubscription(
+      roomCode,
+      req.user!.id,
+      subscription,
+    );
     return { message: '알림 설정이 완료되었습니다.' };
   }
 }
