@@ -72,7 +72,7 @@ export class PenaltyService {
 
     const plannedDurationMs =
       (focusMin * rounds + breakMin * Math.max(0, rounds - 1)) * 60 * 1000;
-      
+
     const sessionEndedAt =
       room.endedAt ??
       (room.startedAt
@@ -90,15 +90,17 @@ export class PenaltyService {
         // 일반 이탈 로그 합산 (휴식 시간 제외 필터링)
         for (const log of member.escapeLogs) {
           const escStart = log.escapedAt.getTime();
-          const escEnd = log.returnedAt ? log.returnedAt.getTime() : sessionEndedAt.getTime();
-          
+          const escEnd = log.returnedAt
+            ? log.returnedAt.getTime()
+            : sessionEndedAt.getTime();
+
           const effectiveMs = this.getEffectiveFocusEscapeMs(
             escStart,
             escEnd,
             sessionStartMs,
             focusMin,
             breakMin,
-            rounds
+            rounds,
           );
 
           totalEscapeMs += effectiveMs;
@@ -125,7 +127,7 @@ export class PenaltyService {
             sessionStartMs,
             focusMin,
             breakMin,
-            rounds
+            rounds,
           );
           totalEscapeMs += giveUpMs;
         }
@@ -165,6 +167,135 @@ export class PenaltyService {
     });
   }
 
+  /**
+   * 중도포기 시점에 호출. 해당 멤버 단독 벌칙 산정·저장 (forfeit 최고 등급, is_revealed=true).
+   * 산정 로직은 calculateAndSave의 멤버별 처리와 동일(휴식 제외 focus-only) — 세션 종료 시
+   * 동일 멤버를 멱등 skip하므로 통합결과와 totalEscapeMs가 일치한다.
+   * (calculateAndSave 인라인 루프와 의도적으로 동일 형태 유지 — develop 산정 로직 보존)
+   */
+  async calculateAndSaveForGiveUp(
+    roomCode: string,
+    memberId: string,
+  ): Promise<void> {
+    const room = await this.prisma.room.findUnique({
+      where: { code: roomCode },
+      include: {
+        template: { include: { penalties: true } },
+        roomMembers: {
+          where: { id: memberId },
+          include: { escapeLogs: { where: { deletedAt: null } } },
+        },
+      },
+    });
+
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다.');
+    if (!room.template) throw new NotFoundException('계약서 정보가 없습니다.');
+
+    const member = room.roomMembers[0];
+    if (!member)
+      throw new NotFoundException('방 참여 정보를 찾을 수 없습니다.');
+
+    const tiers = parseTierConfig(room.template.tierConfig);
+    const { focusMin, breakMin, rounds } = room.template;
+    const penaltyPool = room.template.penalties;
+
+    // give-up 시점엔 endedAt이 없으므로 계획 종료 시각을 anchor로 사용 (calculateAndSave와 동일 공식).
+    const plannedDurationMs =
+      (focusMin * rounds + breakMin * Math.max(0, rounds - 1)) * 60 * 1000;
+
+    const sessionEndedAt =
+      room.endedAt ??
+      (room.startedAt
+        ? new Date(room.startedAt.getTime() + plannedDurationMs)
+        : new Date());
+
+    const sessionStartMs = room.startedAt?.getTime() ?? Date.now();
+
+    await this.prisma.$transaction(async (tx) => {
+      let totalEscapeMs = 0;
+
+      // 일반 이탈 로그 합산 (휴식 시간 제외 필터링)
+      for (const log of member.escapeLogs) {
+        const escStart = log.escapedAt.getTime();
+        const escEnd = log.returnedAt
+          ? log.returnedAt.getTime()
+          : sessionEndedAt.getTime();
+
+        const effectiveMs = this.getEffectiveFocusEscapeMs(
+          escStart,
+          escEnd,
+          sessionStartMs,
+          focusMin,
+          breakMin,
+          rounds,
+        );
+
+        totalEscapeMs += effectiveMs;
+
+        if (log.returnedAt === null) {
+          await tx.escapeLog.update({
+            where: { id: log.id },
+            data: { returnedAt: sessionEndedAt, durationMs: effectiveMs },
+          });
+        } else if (log.durationMs !== effectiveMs) {
+          await tx.escapeLog.update({
+            where: { id: log.id },
+            data: { durationMs: effectiveMs },
+          });
+        }
+      }
+
+      // 포기 시각 ~ 세션 종료 잔여 집중 시간 합산 (휴식 시간 제외)
+      if (member.gaveUpAt) {
+        totalEscapeMs += this.getEffectiveFocusEscapeMs(
+          member.gaveUpAt.getTime(),
+          sessionEndedAt.getTime(),
+          sessionStartMs,
+          focusMin,
+          breakMin,
+          rounds,
+        );
+      }
+
+      // 포기자는 항상 forfeit 최고 등급 (is_revealed=true 전체 공개)
+      const { penaltyTier, penaltyCount, isForceAll } =
+        resolveForfeitTier(tiers);
+
+      const existing = await tx.roomResult.findUnique({
+        where: { roomMemberId: member.id },
+      });
+
+      if (!existing) {
+        await tx.roomResult.create({
+          data: {
+            roomMemberId: member.id,
+            roomCode,
+            totalEscapeMs,
+            penaltyTier,
+          },
+        });
+
+        if (penaltyCount > 0 && penaltyPool.length > 0) {
+          const assigned = this.assignPenalties(penaltyPool, penaltyCount);
+          await tx.resultPenalty.createMany({
+            data: Object.entries(assigned).map(([content, count]) => ({
+              roomMemberId: member.id,
+              content,
+              count,
+              isRevealed: isForceAll,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * penaltyCount만큼 pool에서 무작위 배정.
+   * pool 크기 초과 시 순환 배정, 동일 content는 count++.
+   * Fisher-Yates 셔플 적용.
+   */
   private assignPenalties(
     pool: PenaltyItem[],
     count: number,
