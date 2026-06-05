@@ -678,7 +678,10 @@ export class RoomService {
           { hostId: userId },
           {
             roomMembers: {
-              some: isGuest ? { guestToken: userId } : { userId },
+              some: {
+                ...(isGuest ? { guestToken: userId } : { userId }),
+                gaveUpAt: null,
+              },
             },
           },
         ],
