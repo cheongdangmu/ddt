@@ -87,6 +87,7 @@ export function SemiResult() {
       )
     : null;
   const shouldShowRoulette = (myResult?.remainingSpins ?? 0) > 0;
+  const canDecideNextRoute = !!result && !!me && !!myResult;
   const totalTime = formatSessionTime(result?.totalSessionMs ?? null);
   const completedSessions = result?.rule
     ? `${result.completedRounds ?? 0} / ${result.rule.rounds}`
@@ -115,10 +116,14 @@ export function SemiResult() {
             : `/room/${params.code}/total-result`,
         )
       }
-      disabled={isLoading || isError || !result}
+      disabled={isLoading || isError || !canDecideNextRoute}
       className='w-full rounded-xl border-none bg-[#7C3AED] py-6 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#6D28D9]'
     >
-      {shouldShowRoulette ? '룰렛 돌리기' : '다음'}
+      {!canDecideNextRoute
+        ? '확인 중...'
+        : shouldShowRoulette
+          ? '룰렛 돌리기'
+          : '다음'}
     </Button>
   );
 

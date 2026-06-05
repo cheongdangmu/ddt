@@ -149,6 +149,11 @@ export function SocketProvider({
       },
     );
 
+    s.on('session:ended', () => {
+      useRoomStore.getState().setState({ phase: 'result' });
+      useRoomStore.getState().setSessionInfo(null);
+    });
+
     s.on('member:gave-up', ({ userId, gaveUpAt }) => {
       useRoomStore.getState().upsertMember(userId, { gaveUpAt });
     });
