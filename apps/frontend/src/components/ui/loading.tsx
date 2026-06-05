@@ -1,26 +1,25 @@
 'use client';
 
+import { createPortal } from 'react-dom';
+import { useSyncExternalStore } from 'react';
 import type { CSSProperties } from 'react';
 
 interface LoadingProps {
   label?: string;
-  size?: 'sm' | 'md' | 'lg';
 }
 
-const sizeConfig = {
-  sm: { wrap: 'w-9 h-9', dot: 'w-[5px] h-[5px]', rippleStart: '5px', rippleEnd: '36px' },
-  md: { wrap: 'w-[60px] h-[60px]', dot: 'w-2 h-2', rippleStart: '8px', rippleEnd: '60px' },
-  lg: { wrap: 'w-20 h-20', dot: 'w-[10px] h-[10px]', rippleStart: '10px', rippleEnd: '80px' },
-};
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
 
-function PingSpinner({ size = 'lg' }: { size?: 'sm' | 'md' | 'lg' }) {
-  const cfg = sizeConfig[size];
-
+function PingSpinner() {
   return (
-    <div className={`relative flex items-center justify-center ${cfg.wrap}`}>
-      <span
-        className={`absolute rounded-full bg-white z-10 animate-[dotPulse_2s_ease-in-out_infinite] ${cfg.dot}`}
-      />
+    <div className='relative flex items-center justify-center w-20 h-20'>
+      <span className='absolute w-2.5 h-2.5 rounded-full bg-white z-10 animate-[dotPulse_2s_ease-in-out_infinite]' />
       {[0, 0.55, 1.1].map((delay, i) => (
         <span
           key={i}
@@ -28,8 +27,8 @@ function PingSpinner({ size = 'lg' }: { size?: 'sm' | 'md' | 'lg' }) {
           style={
             {
               animationDelay: `${delay}s`,
-              '--ripple-start': cfg.rippleStart,
-              '--ripple-end': cfg.rippleEnd,
+              '--ripple-start': '10px',
+              '--ripple-end': '80px',
             } as CSSProperties
           }
         />
@@ -38,20 +37,22 @@ function PingSpinner({ size = 'lg' }: { size?: 'sm' | 'md' | 'lg' }) {
   );
 }
 
-export default function Loading({
-  label = '불러오는 중...',
-  size = 'lg',
-}: LoadingProps) {
-  return (
+export default function Loading({ label = '불러오는 중...' }: LoadingProps) {
+  const isClient = useIsClient();
+
+  if (!isClient) return null;
+
+  return createPortal(
     <div
-      className='fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-black/60 backdrop-blur-sm'
+      className='fixed inset-0 z-9999 flex flex-col items-center justify-center gap-5 bg-black/60'
       aria-live='polite'
       aria-label={label}
     >
-      <PingSpinner size={size} />
+      <PingSpinner />
       <span className='text-[13px] tracking-widest text-white/50 font-light animate-[textFade_2s_ease-in-out_infinite]'>
         {label}
       </span>
-    </div>
+    </div>,
+    document.body,
   );
 }
