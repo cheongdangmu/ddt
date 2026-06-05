@@ -159,7 +159,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!roomCode || !userId) {
       return;
     }
-
+    await this.escapeService.clearHeartbeat(roomCode, userId);
     const roomState = await this.roomService.getRoomState(roomCode);
 
     if (roomState?.members[userId]?.socketId === client.id) {

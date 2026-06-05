@@ -17,7 +17,9 @@ export class EscapeService {
       10,
     );
   }
-
+  async clearHeartbeat(roomCode: string, identifier: string) {
+    await this.redis.instance.del(`heartbeat:${roomCode}:${identifier}`);
+  }
   async logEscapeStart(roomCode: string, identifier: string) {
     const room = await this.prisma.room.findUnique({
       where: { code: roomCode },
