@@ -33,13 +33,10 @@ export default function Timer() {
   const phase = useRoomStore((s) => s.phase);
   const sessionInfo = useRoomStore((s) => s.sessionInfo);
 
-  // 화면 꺼짐 방지 실행
   const { isSupported: isWakeLockSupported } = useWakeLock();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  
-  // 이벤트 리스너 안에서 최신 isFocus 상태를 알기 위한 Ref
   const isFocusRef = useRef(true);
 
   useEffect(() => {
@@ -50,7 +47,6 @@ export default function Timer() {
     return () => window.clearInterval(interval);
   }, [sessionInfo]);
 
-  // 서버(소켓)에서 전달받은 phase에 의해서만 페이지를 이동시킵니다 (레이스 컨디션 해결)
   useEffect(() => {
     if (!phase) return;
     if (phase === 'contract') {
@@ -121,21 +117,17 @@ export default function Timer() {
     giveUpMutation.mutate();
   };
 
-  if (!me) return null;
-  if (!sessionInfo) return <div>로딩 중...</div>;
-
-  // 시간 및 상태 계산
-  const adjustedNow = now + sessionInfo.serverOffset;
-  const elapsed = adjustedNow - sessionInfo.startedAt;
-  const cycleMs = (sessionInfo.focusMin + sessionInfo.breakMin) * 60 * 1000;
-  const focusMs = sessionInfo.focusMin * 60 * 1000;
-  const breakMs = sessionInfo.breakMin * 60 * 1000;
-  const totalRounds = sessionInfo.totalRounds;
+  const adjustedNow = now + (sessionInfo?.serverOffset ?? 0);
+  const elapsed = adjustedNow - (sessionInfo?.startedAt ?? adjustedNow);
+  const focusMs = (sessionInfo?.focusMin ?? 0) * 60 * 1000;
+  const breakMs = (sessionInfo?.breakMin ?? 0) * 60 * 1000;
+  const cycleMs = focusMs + breakMs;
+  const totalRounds = sessionInfo?.totalRounds ?? 1;
   const totalMs = focusMs * totalRounds + breakMs * Math.max(0, totalRounds - 1);
   
   const clampedElapsed = Math.min(Math.max(0, elapsed), totalMs);
   const lastRoundStartMs = cycleMs * Math.max(0, totalRounds - 1);
-  const isLastRound = clampedElapsed >= lastRoundStartMs;
+  const isLastRound = cycleMs > 0 ? clampedElapsed >= lastRoundStartMs : true;
 
   const round = isLastRound ? totalRounds : Math.floor(clampedElapsed / cycleMs) + 1;
   const cycleElapsed = isLastRound ? clampedElapsed - lastRoundStartMs : clampedElapsed % cycleMs;
@@ -146,39 +138,32 @@ export default function Timer() {
 
   const phaseRemainingSec = Math.max(0, Math.ceil(phaseRemainingMs / 1000));
   const phaseTotalSec = Math.ceil(phaseTotalMs / 1000);
-  const focusDurationSec = sessionInfo.focusMin * 60;
-  const breakDurationSec = sessionInfo.breakMin * 60;
+  const focusDurationSec = (sessionInfo?.focusMin ?? 0) * 60;
+  const breakDurationSec = (sessionInfo?.breakMin ?? 0) * 60;
 
-  // 1. isFocus 상태 업데이트 및 타이머 전환 시 자동 이탈/복귀 처리 (화면 꺼진 상태 대비)
   useEffect(() => {
     if (!socket || !sessionInfo) return;
 
     if (document.hidden) {
       if (isFocus) {
-        // 휴식 -> 집중으로 넘어갔는데 아직 안 돌아왔다면: 이탈 시작
         socket.emit('escape:start');
       } else {
-        // 집중 -> 휴식으로 넘어갔는데 아직 안 돌아왔다면: 억울한 벌칙 방지를 위해 이탈 종료
         socket.emit('escape:end');
       }
     }
-    // 최신 상태 동기화
     isFocusRef.current = isFocus;
   }, [isFocus, socket, sessionInfo]);
 
-  // 2. 화면 이탈 / 복귀 감지
   useEffect(() => {
     if (!socket || !sessionInfo) return;
 
     const handler = () => {
       if (document.hidden) {
-        // 화면을 나갈 때: 현재 '집중 시간'일 때만 이탈로 간주
         if (isFocusRef.current) {
           socket.emit('escape:start');
           toast.error('화면을 이탈했습니다! 벌칙 시간이 누적됩니다.', { duration: 3000 });
         }
       } else {
-        // 화면으로 돌아올 때: 모드에 상관없이 안전하게 닫기 신호 전송
         socket.emit('escape:end');
       }
     };
@@ -186,6 +171,9 @@ export default function Timer() {
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
   }, [socket, sessionInfo]);
+
+  if (!me) return null;
+  if (!sessionInfo) return <div className='flex items-center justify-center w-full h-screen text-white'>로딩 중...</div>;
 
   const theme = {
     textColor: isFocus ? 'text-primary' : 'text-success',
@@ -263,7 +251,6 @@ export default function Timer() {
           subStatusText={theme.subStatusText}
         />
 
-        {/* 미지원 기기용 안내 문구 (WakeLock 실패 시 렌더링) */}
         {!isWakeLockSupported && (
           <div className='text-center mt-4 w-full max-w-sm px-4'>
             <div className='flex items-start justify-center gap-2 bg-[#F85A5A]/10 border border-[#F85A5A]/30 rounded-xl px-4 py-3 text-xs text-[#F85A5A]'>

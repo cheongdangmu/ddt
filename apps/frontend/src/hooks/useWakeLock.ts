@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import NoSleep from 'nosleep.js';
 
+interface WakeLockSentinel {
+  release: () => Promise<void>;
+}
+
 export function useWakeLock() {
-  const noSleepRef = useRef<NoSleep | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wakeLockRef = useRef<any>(null); // WakeLockSentinel
+const noSleepRef = useRef<NoSleep | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const [isSupported, setIsSupported] = useState(true);
 
   useEffect(() => {
@@ -17,7 +20,7 @@ export function useWakeLock() {
     const enableWakeLock = async () => {
       try {
         if ('wakeLock' in navigator) {
-          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          wakeLockRef.current = await (navigator as unknown as { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } }).wakeLock.request('screen');
           console.log('WakeLock API 활성화 완료');
         } else {
           throw new Error('WakeLock API 미지원 환경');
