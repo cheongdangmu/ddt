@@ -40,6 +40,7 @@ type ResultRulePenalty = {
 
 type ResultMember = {
   userId: string | null;
+  guestToken: string | null;
   remainingSpins: number;
   penaltyCount: number;
   penalties: {
@@ -139,24 +140,14 @@ export function Roulette() {
   );
 
   const myResult = useMemo(() => {
-    if (!result) return null;
+    if (!result || !me) return null;
 
     if (me?.role === 'user') {
       return result.members.find((member) => member.userId === me.id) ?? null;
     }
 
     if (me?.role === 'guest') {
-      return (
-        result.members.find(
-          (member) =>
-            member.userId === null && getUnrevealedPenaltyCount(member) > 0,
-        ) ??
-        result.members.find(
-          (member) =>
-            member.userId === null && member.penalties.totalCount > 0,
-        ) ??
-        null
-      );
+      return result.members.find((member) => member.guestToken === me.id) ?? null;
     }
 
     return null;

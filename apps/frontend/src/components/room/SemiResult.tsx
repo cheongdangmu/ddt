@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 type ResultMember = {
   memberId: string;
   userId: string | null;
+  guestToken: string | null;
   nickname: string;
   profileImage: string | null;
   isHost: boolean;
@@ -40,12 +41,6 @@ type ResultResponse = {
     rounds: number;
   } | null;
 };
-
-const getUnrevealedPenaltyCount = (member: ResultMember | null | undefined) =>
-  Math.max(
-    0,
-    (member?.penalties.totalCount ?? 0) - (member?.penaltyCount ?? 0),
-  );
 
 const formatSessionTime = (totalMs: number | null) => {
   if (totalMs === null) return '-';
@@ -84,20 +79,14 @@ export function SemiResult() {
   const rankedMembers = [...(result?.members ?? [])].sort(
     (a, b) => a.rank - b.rank || b.totalEscapeMs - a.totalEscapeMs,
   );
-  const myResult =
-    me?.role === 'user'
-      ? rankedMembers.find((member) => member.userId === me.id)
-      : rankedMembers.find(
-          (member) =>
-            member.userId === null && getUnrevealedPenaltyCount(member) > 0,
-        ) ??
-        rankedMembers.find(
-          (member) =>
-            member.userId === null && member.penalties.totalCount > 0,
-        ) ??
-        rankedMembers.find((member) => member.userId === null) ??
-        null;
-  const shouldShowRoulette = getUnrevealedPenaltyCount(myResult) > 0;
+  const myResult = me
+    ? rankedMembers.find((member) =>
+        me.role === 'user'
+          ? member.userId === me.id
+          : member.guestToken === me.id
+      )
+    : null;
+  const shouldShowRoulette = (myResult?.remainingSpins ?? 0) > 0;
   const canDecideNextRoute = !!result && !!me && !!myResult;
   const totalTime = formatSessionTime(result?.totalSessionMs ?? null);
   const completedSessions = result?.rule
