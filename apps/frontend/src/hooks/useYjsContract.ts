@@ -19,6 +19,8 @@ function generateColor(userId: string): string {
   return colors[index];
 }
 
+import { v4 as uuid } from 'uuid';
+
 export function useYjsContract(
   roomCode: string,
   enabled: boolean,
@@ -54,7 +56,7 @@ export function useYjsContract(
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     const serverUrl = `${apiUrl.replace(/^http(s?)/, 'ws$1')}/yjs?roomCode=${roomCode}`;
-    
+
     const provider = new WebsocketProvider(serverUrl, '', doc);
     const awareness = provider.awareness;
 
@@ -271,9 +273,7 @@ export function useYjsContract(
     }
 
     doc.transact(() => {
-      doc
-        .getArray<Penalty>('penalties')
-        .push([{ id: crypto.randomUUID(), content }]);
+      doc.getArray<Penalty>('penalties').push([{ id: uuid(), content }]);
     });
   }, []);
 
