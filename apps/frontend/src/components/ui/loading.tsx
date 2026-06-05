@@ -1,7 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { CSSProperties } from 'react';
 
 interface LoadingProps {
@@ -39,12 +39,30 @@ function PingSpinner() {
 
 export default function Loading({ label = '불러오는 중...' }: LoadingProps) {
   const isClient = useIsClient();
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+
+    const siblings = Array.from(document.body.children) as HTMLElement[];
+    siblings.forEach((el) => {
+      if (!el.contains(overlay)) el.setAttribute('inert', '');
+    });
+    overlay.focus();
+
+    return () => {
+      siblings.forEach((el) => el.removeAttribute('inert'));
+    };
+  }, []);
 
   if (!isClient) return null;
 
   return createPortal(
     <div
-      className='fixed inset-0 z-9999 flex flex-col items-center justify-center gap-5 bg-black/60'
+      ref={overlayRef}
+      tabIndex={-1}
+      className='fixed inset-0 z-9999 flex flex-col items-center justify-center gap-5 bg-black/80 outline-none'
       aria-live='polite'
       aria-label={label}
     >
