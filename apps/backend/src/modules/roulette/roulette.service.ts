@@ -66,13 +66,14 @@ export class RouletteService {
     const remainingSpins = totalSpins - spinIndex;
     const isFinished = remainingSpins === 0;
 
-    // 마지막 스핀에서만 전체 공개 + 브로드캐스트 (중간 스핀은 DB 무변경)
+    // 마지막 스핀에서만 전체 공개 + 브로드캐스트 (중간 스핀은 DB 무변경).
+    // updateMany의 count를 권위로 삼아 동시 호출의 패자(count=0)는 broadcast 생략(exit과 대칭).
     if (isFinished) {
-      await this.prisma.resultPenalty.updateMany({
+      const { count } = await this.prisma.resultPenalty.updateMany({
         where: { roomMemberId: member.id, isRevealed: false },
         data: { isRevealed: true },
       });
-      await this.broadcastRevealed(roomCode, member);
+      if (count > 0) await this.broadcastRevealed(roomCode, member);
     }
 
     // content → PENALTY_ITEM.id 매핑 (휠 정지 위치 식별용)
@@ -111,7 +112,16 @@ export class RouletteService {
         select: { content: true, count: true },
       });
       if (rows.length === 0) {
-        throw new BadRequestException('룰렛 처리가 이미 완료되었습니다.');
+        // 0건은 '이미 전부 공개됨'(result 존재)과 '미산정'(result 부재) 두 경우 → 구분.
+        const result = await tx.roomResult.findUnique({
+          where: { roomMemberId: member.id },
+          select: { roomMemberId: true },
+        });
+        throw new BadRequestException(
+          result
+            ? '룰렛 처리가 이미 완료되었습니다.'
+            : '아직 결과가 산정되지 않았습니다. 잠시 후 다시 시도해주세요.',
+        );
       }
       const { count } = await tx.resultPenalty.updateMany({
         where: { roomMemberId: member.id, isRevealed: false },
@@ -175,6 +185,10 @@ export class RouletteService {
       if (!member)
         throw new BadRequestException('멤버 정보를 찾을 수 없습니다.');
     }
+
+    // 재산정 후에도 결과가 없으면(이론상 도달 불가) 빈 결과 무음 반환 대신 명시적 실패.
+    if (!member.result)
+      throw new InternalServerErrorException('결과 데이터를 찾을 수 없습니다.');
 
     const penaltyItemMap = this.buildPenaltyItemMap(member);
     const penaltyPool = (member.room.template?.penalties ?? []).map((p) => ({
