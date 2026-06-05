@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { X } from 'lucide-react';
 import { getResultApi } from '@/api/generated/result-api-결과-조회/result-api-결과-조회';
 import { getRouletteApi } from '@/api/generated/roulette-api-벌칙-룰렛/roulette-api-벌칙-룰렛';
@@ -41,6 +42,7 @@ type ResultMember = {
   userId: string | null;
   guestToken: string | null;
   remainingSpins: number;
+  penaltyCount: number;
   penalties: {
     totalCount: number;
     items: { content: string; count: number }[];
@@ -95,6 +97,12 @@ const toRouletteItems = (penalties: ResultRulePenalty[] = []) =>
     id: item.itemId,
     label: item.content,
   }));
+
+const getUnrevealedPenaltyCount = (member: ResultMember | null | undefined) =>
+  Math.max(
+    0,
+    (member?.penalties.totalCount ?? 0) - (member?.penaltyCount ?? 0),
+  );
 
 export function Roulette() {
   const router = useRouter();
@@ -164,17 +172,54 @@ export function Roulette() {
     },
   });
 
-  const initialRemainingSpins = myResult?.remainingSpins ?? 0;
-  const totalChances = initialRemainingSpins;
+  const exitMutation = useMutation({
+    mutationFn: async () => {
+      const res = await getRouletteApi().rouletteControllerExitRoulette(
+        params.code,
+      );
+
+      return res.data;
+    },
+    onSuccess: () => {
+      setIsDialogOpen(false);
+      router.push(`/room/${params.code}/total-result`);
+    },
+    onError: (err) => {
+      const errorData = axios.isAxiosError(err) ? err.response?.data : null;
+      const rawMessage =
+        errorData && typeof errorData === 'object' && 'message' in errorData
+          ? (errorData as { message?: unknown }).message
+          : undefined;
+      const message = Array.isArray(rawMessage)
+        ? rawMessage.join(', ')
+        : typeof rawMessage === 'string'
+          ? rawMessage
+          : undefined;
+
+      if (
+        axios.isAxiosError(err) &&
+        (err.response?.status === 400 || err.response?.status === 409) &&
+        message?.includes('이미 완료')
+      ) {
+        setIsDialogOpen(false);
+        router.push(`/room/${params.code}/total-result`);
+        return;
+      }
+
+      setSpinErrorMessage(message ?? '룰렛 나가기에 실패했습니다.');
+      setIsDialogOpen(false);
+    },
+  });
+
+  const revealedChances = myResult?.penaltyCount ?? 0;
+  const totalChances = getUnrevealedPenaltyCount(myResult);
+  const pickedSpins = Math.min(totalChances, currentIndex);
+  const remainingChances = Math.max(0, totalChances - pickedSpins);
   const isAllCompleted =
     (!!myResult && totalChances === 0) ||
-    (totalChances > 0 && currentIndex >= totalChances) ||
+    (totalChances > 0 && remainingChances === 0) ||
     !!spinMutation.data?.isFinished;
-  const nextSpinIndex =
-    (myResult?.penalties.totalCount ?? 0) -
-    initialRemainingSpins +
-    currentIndex +
-    1;
+  const nextSpinIndex = revealedChances + pickedSpins + 1;
   const remainingSeconds = result
     ? getRemainingSeconds(
         result.serverTime,
@@ -238,24 +283,28 @@ export function Roulette() {
       setCurrentSpinResult(spinResult);
       setIsSpinning(true);
     } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        router.push(`/room/${params.code}/total-result`);
+        return;
+      }
+
       setSpinErrorMessage(
         err instanceof Error ? err.message : '룰렛 실행에 실패했습니다.',
       );
     }
   };
 
-  const handleStopSpinning = () => {
+  const handleStopSpinning = useCallback(() => {
     if (currentSpinResult) {
       setHistory((prev) => [...prev, currentSpinResult.penaltyContent]);
     }
     setCurrentIndex((prev) => prev + 1);
     setIsSpinning(false);
     setCurrentSpinResult(null);
-  };
+  }, [currentSpinResult]);
 
   const handleExit = () => {
-    setIsDialogOpen(false);
-    console.log('룰렛 나가기');
+    exitMutation.mutate();
   };
 
   return (
@@ -294,7 +343,7 @@ export function Roulette() {
               ? '다른 멤버 벌칙 보기'
               : `룰렛 돌리기 (${Math.max(
                   0,
-                  totalChances - currentIndex,
+                  remainingChances,
                 )}/${totalChances})`}
         </Button>
       }
@@ -384,9 +433,10 @@ export function Roulette() {
             <Button
               type='button'
               onClick={handleExit}
+              disabled={exitMutation.isPending}
               className='h-14 rounded-[14px] bg-primary text-sm font-bold text-primary-foreground'
             >
-              나가기
+              {exitMutation.isPending ? '처리 중...' : '나가기'}
             </Button>
           </div>
         </DialogContent>

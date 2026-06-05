@@ -99,6 +99,19 @@ export class TimerService {
     return room;
   }
 
+  private getSessionDurationMs(template: {
+    focusMin: number;
+    breakMin: number;
+    rounds: number;
+  }) {
+    return (
+      (template.focusMin * template.rounds +
+        template.breakMin * Math.max(0, template.rounds - 1)) *
+      60 *
+      1000
+    );
+  }
+
   private ensureContractPhase(phase: string) {
     if (phase !== 'contract') {
       throw new HttpException(
@@ -193,12 +206,7 @@ export class TimerService {
       }
     }
 
-    const totalMs =
-      (roomWithTemplate.template.focusMin +
-        roomWithTemplate.template.breakMin) *
-      roomWithTemplate.template.rounds *
-      60 *
-      1000;
+    const totalMs = this.getSessionDurationMs(roomWithTemplate.template);
 
     setTimeout(() => {
       this.endSession(roomCode).catch((err) => Sentry.captureException(err));
@@ -319,12 +327,7 @@ export class TimerService {
     this.yjsGateway.destroyRoom(roomCode);
     this.roomGateway.server.to(roomCode).emit('session:started', responseData);
 
-    const totalMs =
-      (roomWithTemplate.template.focusMin +
-        roomWithTemplate.template.breakMin) *
-      roomWithTemplate.template.rounds *
-      60 *
-      1000;
+    const totalMs = this.getSessionDurationMs(roomWithTemplate.template);
 
     setTimeout(() => {
       this.endSession(roomCode).catch((err) => Sentry.captureException(err));
