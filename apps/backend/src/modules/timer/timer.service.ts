@@ -346,7 +346,6 @@ export class TimerService implements OnModuleInit {
           Sentry.captureException(err),
         );
       } else {
-        // 기존: 종료 타이머 큐 복구
         await this.sessionQueue
           .add(
             'end',
@@ -355,12 +354,11 @@ export class TimerService implements OnModuleInit {
               jobId: endJobId(room.code),
               delay: remaining,
               removeOnComplete: true,
-              removeOnFail: 100, // 🟢 일관성 유지 추가
+              removeOnFail: 100, 
             },
           )
           .catch(() => undefined);
 
-        // 🟢 TO-BE: 누락된 '휴식 푸시 알림(break-warning)' 큐 복구 로직 추가
         const { focusMin, breakMin, rounds } = room.template;
         for (let r = 1; r < rounds; r++) {
           const notifyTimeMs = ((focusMin + breakMin) * r - 1) * 60 * 1000;
