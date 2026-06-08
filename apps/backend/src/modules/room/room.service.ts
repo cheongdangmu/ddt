@@ -120,7 +120,7 @@ export class RoomService {
 
     const passwordHash = await bcrypt.hash(createRoomDto.password, 10);
     const room = await this.createRoomWithUniqueCode({
-      ...createRoomDto,
+      title: createRoomDto.title,
       hostId,
       passwordHash,
       phase: 'lobby',

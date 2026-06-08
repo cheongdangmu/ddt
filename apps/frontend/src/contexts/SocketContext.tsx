@@ -38,7 +38,7 @@ export function SocketProvider({
     const s = io(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080', {
       auth: { token },
       query: { roomCode },
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
     });
 
     s.on('connect', () => {
