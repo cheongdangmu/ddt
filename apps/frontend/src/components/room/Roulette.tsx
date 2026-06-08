@@ -18,6 +18,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
+import type {
+  GiveUpRouletteResponseDto,
+  ResultMemberDto,
+  ResultResponseDto,
+  SpinRouletteResponseDto,
+} from '@/api/generated/models';
 
 const PenaltyRoulette = dynamic(
   () => import('@/components/ui/custom-roulette'),
@@ -34,46 +40,9 @@ type RoulettePenalty = {
   label: string;
 };
 
-type ResultRulePenalty = {
+type RouletteRulePenalty = {
   itemId: string;
   content: string;
-};
-
-type ResultMember = {
-  userId: string | null;
-  guestToken: string | null;
-  remainingSpins: number;
-  penaltyCount: number;
-  penalties: {
-    totalCount: number;
-    items: { content: string; count: number }[];
-  };
-};
-
-type ResultResponse = {
-  serverTime: string;
-  rouletteEndsAt: string | null;
-  members: ResultMember[];
-  rule: {
-    penalties: ResultRulePenalty[];
-  } | null;
-};
-
-type SpinRouletteResponse = {
-  spinIndex: number;
-  penaltyItemId: string | null;
-  penaltyContent: string;
-  remainingSpins: number;
-  isFinished: boolean;
-};
-
-type GiveUpRouletteResponse = {
-  penaltyPool: ResultRulePenalty[];
-  penalties: {
-    itemId: string | null;
-    content: string;
-    count: number;
-  }[];
 };
 
 const formatRemainingTime = (totalSeconds: number) => {
@@ -101,7 +70,7 @@ const getRemainingSeconds = (
   return Math.max(0, Math.floor(remainingMs / 1000));
 };
 
-const toRouletteItems = (penalties: ResultRulePenalty[] = []) =>
+const toRouletteItems = (penalties: RouletteRulePenalty[] = []) =>
   penalties.map((item) => ({
     id: item.itemId,
     label: item.content,
@@ -118,7 +87,9 @@ const shuffleItems = <T,>(items: T[]) => {
   return shuffled;
 };
 
-const getUnrevealedPenaltyCount = (member: ResultMember | null | undefined) =>
+const getUnrevealedPenaltyCount = (
+  member: ResultMemberDto | null | undefined,
+) =>
   Math.max(
     0,
     (member?.penalties.totalCount ?? 0) - (member?.penaltyCount ?? 0),
@@ -135,7 +106,7 @@ export function Roulette() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [currentSpinResult, setCurrentSpinResult] =
-    useState<SpinRouletteResponse | null>(null);
+    useState<SpinRouletteResponseDto | null>(null);
   const [spinErrorMessage, setSpinErrorMessage] = useState('');
   const hasShownNoPenaltyToastRef = useRef(false);
   const isGiveUpRoulette = searchParams.get('from') === 'giveup';
@@ -156,7 +127,7 @@ export function Roulette() {
     queryKey: ['result', params.code],
     queryFn: async () => {
       const res = await getResultApi().resultControllerGetResult(params.code);
-      return res.data as ResultResponse;
+      return res.data as unknown as ResultResponseDto;
     },
     enabled: !isGiveUpRoulette,
   });
@@ -171,7 +142,7 @@ export function Roulette() {
       const res = await getRouletteApi().rouletteControllerGetGiveUpResult(
         params.code,
       );
-      return res.data as GiveUpRouletteResponse;
+      return res.data as unknown as GiveUpRouletteResponseDto;
     },
     enabled: isGiveUpRoulette,
   });
@@ -217,7 +188,7 @@ export function Roulette() {
         { spinIndex },
       );
 
-      return res.data as SpinRouletteResponse;
+      return res.data as unknown as SpinRouletteResponseDto;
     },
   });
 
