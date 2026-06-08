@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
 import { Award, ChevronDown, ThumbsUp, Trophy, X } from 'lucide-react';
 import { getResultApi } from '@/api/generated/result-api-결과-조회/result-api-결과-조회';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ import {
 import { MobileLayout } from '@/components/layout/mobileLayout';
 import { CloseButton } from '@/components/layout/CloseButton';
 import { getToken } from '@/lib/getToken';
+import { getProfileImageSrc } from '@/lib/profileImage';
 import { isMobileOrTablet } from '@/lib/device';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -85,6 +86,14 @@ const formatSessionTime = (totalMs: number | null) => {
   if (hours <= 0) return `${minutes}분`;
   if (minutes <= 0) return `${hours}시간`;
   return `${hours}시간 ${minutes}분`;
+};
+
+const formatEscapeTime = (totalMs: number) => {
+  const totalSeconds = Math.floor(totalMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}분${seconds}초`;
 };
 
 const formatTierRange = (minPct: number, maxPct: number | null) =>
@@ -256,6 +265,9 @@ export function TotalResult() {
                       ? (me.role === 'user' && member.userId === me.id) ||
                         (me.role === 'guest' && member.guestToken === me.id)
                       : false;
+                    const profileImageSrc = getProfileImageSrc(
+                      member.profileImage,
+                    );
                     return (
                       <div
                         key={member.memberId}
@@ -270,6 +282,12 @@ export function TotalResult() {
                             </div>
                           )}
                           <Avatar className='h-9 w-9 border border-slate-700 bg-[#22293F]'>
+                            {profileImageSrc ? (
+                              <AvatarImage
+                                src={profileImageSrc}
+                                alt={`${member.nickname} 프로필 이미지`}
+                              />
+                            ) : null}
                             <AvatarFallback className='bg-transparent text-xs text-slate-300'>
                               {member.nickname.slice(0, 1)}
                             </AvatarFallback>
@@ -287,16 +305,11 @@ export function TotalResult() {
                                 </Badge>
                               ) : null}
                             </div>
-                            <p className='mt-0.5 text-xs text-slate-500'>
-                              {member.isAllClear
-                                ? '이탈 없음'
-                                : `${member.rank}위`}
-                            </p>
                           </div>
                         </div>
                         <span className='shrink-0 text-xs font-medium text-slate-400'>
                           {member.totalEscapeMs > 0
-                            ? formatSessionTime(member.totalEscapeMs)
+                            ? formatEscapeTime(member.totalEscapeMs)
                             : '이탈 없음'}
                         </span>
                       </div>
@@ -471,8 +484,7 @@ export function TotalResult() {
           </DialogClose>
           <div className='flex flex-col gap-4'>
             <div className='flex items-center'>
-              <div className='flex h-9 min-w-0 items-center gap-0.5 pr-5'>
-                <div className='h-9 w-9 shrink-0 rounded-[18px] bg-[#22293F]' />
+              <div className='flex min-w-0 items-center pr-5'>
                 <DialogTitle className='truncate text-base font-medium text-white/85'>
                   {result?.roomTitle ?? params.code}의 계약서
                 </DialogTitle>
