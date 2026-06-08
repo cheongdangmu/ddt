@@ -225,7 +225,7 @@ export class UsersService {
         const { focusMin, rounds } = m.room.template;
         const plannedFocusMs = focusMin * rounds * 60 * 1000;
         const effectiveFocus = plannedFocusMs - (m.result?.totalEscapeMs || 0);
-        
+
         totalFocusMs += effectiveFocus > 0 ? effectiveFocus : 0;
       }
     });
