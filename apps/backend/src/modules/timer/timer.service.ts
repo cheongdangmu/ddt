@@ -321,9 +321,12 @@ export class TimerService implements OnModuleInit {
     const responseData = { userId, gaveUpAt: now };
     this.roomGateway.server.to(roomCode).emit('member:gave-up', responseData);
 
-    const activeCount = await this.roomService.countActiveMembersInRoom(roomCode);
+    const activeCount =
+      await this.roomService.countActiveMembersInRoom(roomCode);
     if (activeCount === 0) {
-      this.logger.log(`전원 중도 포기로 인해 세션을 조기 종료합니다. (${roomCode})`);
+      this.logger.log(
+        `전원 중도 포기로 인해 세션을 조기 종료합니다. (${roomCode})`,
+      );
       await this.endSession(roomCode);
     }
 
