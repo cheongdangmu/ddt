@@ -119,7 +119,7 @@ export class RoomService {
     const room = await this.prismaService.room.findUnique({
       where: { code: roomCode },
     });
-
+    
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다.');
     if (room.phase !== 'lobby' && room.phase !== 'contract') {
       throw new ForbiddenException(
@@ -219,7 +219,7 @@ export class RoomService {
       throw new NotFoundException('존재하지 않는 방입니다.');
     }
 
-    if (room.phase === 'result' || room.phase === 'closed') {
+    if (room.phase === 'closed') {
       throw new ForbiddenException('종료된 방입니다.');
     }
 
@@ -258,7 +258,7 @@ export class RoomService {
     );
     if (isBanned) throw new ForbiddenException('강퇴된 방입니다.');
 
-    if (room.phase === 'result' || room.phase === 'closed') {
+    if (room.phase === 'closed') {
       throw new ForbiddenException('종료된 방입니다.');
     }
 
