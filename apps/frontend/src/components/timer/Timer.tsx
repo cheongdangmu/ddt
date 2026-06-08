@@ -178,13 +178,6 @@ export default function Timer() {
   const breakDurationSec = (sessionInfo?.breakMin ?? 0) * 60;
 
   useEffect(() => {
-    if (!phase || !me) return;
-    if (!members[me.id]) {
-      router.replace('/');
-    }
-  }, [phase, me, members, router]);
-
-  useEffect(() => {
     if (!socket || !sessionInfo) return;
 
     if (document.hidden) {
