@@ -48,6 +48,8 @@ export interface CreateRoomResult {
   url: string;
 }
 
+const ROOM_STATE_TTL = 36600;
+
 @Injectable()
 export class RoomService {
   constructor(
@@ -97,7 +99,7 @@ export class RoomService {
       `room:state:${room.code}`,
       JSON.stringify(roomState),
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
 
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
@@ -163,7 +165,7 @@ export class RoomService {
           `room:state:${roomCode}`,
           JSON.stringify(state),
           'EX',
-          7200,
+          ROOM_STATE_TTL,
         );
       }
       this.roomGateway.server
@@ -326,7 +328,7 @@ export class RoomService {
             `room:state:${room.code}`,
             JSON.stringify(state),
             'EX',
-            7200,
+            ROOM_STATE_TTL,
           );
         }
       }
@@ -368,7 +370,7 @@ export class RoomService {
             `room:state:${room.code}`,
             JSON.stringify(state),
             'EX',
-            7200,
+            ROOM_STATE_TTL,
           );
         }
       }
@@ -397,7 +399,7 @@ export class RoomService {
         `room:state:${roomCode}`,
         JSON.stringify(state),
         'EX',
-        7200,
+        ROOM_STATE_TTL,
       ),
       this.updatePhase(roomCode, 'contract'),
     ]);
@@ -444,7 +446,7 @@ export class RoomService {
       `room:state:${roomCode}`,
       JSON.stringify(state),
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
   }
 
@@ -491,7 +493,7 @@ export class RoomService {
         `room:state:${roomCode}`,
         JSON.stringify(state),
         'EX',
-        7200,
+        ROOM_STATE_TTL,
       );
     }
   }
@@ -514,14 +516,14 @@ export class RoomService {
         `room:state:${roomCode}`,
         JSON.stringify(state),
         'EX',
-        7200,
+        ROOM_STATE_TTL,
       );
     }
     await this.redisService.instance.set(
       `room:ban:${roomCode}:${targetId}`,
       '1',
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
   }
 
@@ -552,7 +554,7 @@ export class RoomService {
       `room:state:${roomCode}`,
       JSON.stringify(state),
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
 
     const members = Object.values(state.members);
@@ -592,7 +594,7 @@ export class RoomService {
       `room:state:${roomCode}`,
       JSON.stringify(state),
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
 
     return { totalCount: members.length };
@@ -626,7 +628,7 @@ export class RoomService {
       `room:state:${id}`,
       JSON.stringify(state),
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
 
     return true;
@@ -661,24 +663,37 @@ export class RoomService {
       `room:state:${id}`,
       JSON.stringify(state),
       'EX',
-      7200,
+      ROOM_STATE_TTL,
     );
 
     return true;
   }
 
-  // 💡 방 조회 시, 중도 포기(gaveUpAt)한 멤버는 복귀 대상에서 제외되도록 개선!
   async findMyActiveRoom(userId: string) {
     const isGuest = userId.startsWith('guest_');
+    if (isGuest) {
+      return this.prismaService.room.findFirst({
+        where: {
+          phase: { notIn: ['closed', 'result'] },
+          roomMembers: {
+            some: {
+              guestToken: userId,
+              gaveUpAt: null, // 포기한 방은 복귀 모달 안 뜨게 필터링
+            },
+          },
+        },
+        select: { code: true, phase: true, title: true },
+      });
+    }
     return this.prismaService.room.findFirst({
       where: {
         phase: { notIn: ['closed', 'result'] },
-        roomMembers: {
-          some: {
-            ...(isGuest ? { guestToken: userId } : { userId }),
-            gaveUpAt: null, // 포기한 방은 복귀 모달 안 뜨게 필터링
-          },
-        },
+        OR: [
+          // 입장 완료한 방
+          { roomMembers: { some: { userId, gaveUpAt: null } } },
+          // 생성만 하고 아직 입장 안 한 방
+          { hostId: userId },
+        ],
       },
       select: { code: true, phase: true, title: true },
     });

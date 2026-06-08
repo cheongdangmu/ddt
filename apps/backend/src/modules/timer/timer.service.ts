@@ -23,7 +23,14 @@ import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import type { PushSubscription } from 'web-push';
-import { SESSION_QUEUE, SessionJob, endJobId, warnJobId } from './timer.queue';
+import {
+  SESSION_QUEUE,
+  SessionJob,
+  endJobId,
+  warnJobId,
+  breakStartJobId,
+} from './timer.queue';
+import { EscapeService } from '../escape/escape.service';
 
 // 강퇴 재시도 횟수 (총 시도 = 1 + KICK_MAX_RETRIES). kickMember는 멱등이라 재시도 안전.
 const KICK_MAX_RETRIES = 2;
@@ -75,6 +82,7 @@ export class TimerService implements OnModuleInit {
     @InjectQueue(SESSION_QUEUE)
     private readonly sessionQueue: Queue<SessionJob>,
     private readonly configService: ConfigService,
+    private readonly escapeService: EscapeService,
   ) {
     const subject = this.configService.get<string>('VAPID_SUBJECT');
     const publicKey = this.configService.get<string>('VAPID_PUBLIC_KEY');
@@ -93,6 +101,7 @@ export class TimerService implements OnModuleInit {
     userId: string,
     subscription: PushSubscription,
   ) {
+    this.logger.log(`[Push] 구독 저장 (room=${roomCode}, user=${userId})`);
     await this.redis.instance.set(
       `push_sub:${roomCode}:${userId}`,
       JSON.stringify(subscription),
@@ -120,6 +129,7 @@ export class TimerService implements OnModuleInit {
         const subRaw = await this.redis.instance.get(
           `push_sub:${roomCode}:${userId}`,
         );
+        this.logger.log(`[Push] 구독 조회 (user=${userId}, found=${!!subRaw})`);
         if (!subRaw) return;
         const subscription = JSON.parse(subRaw) as PushSubscription;
         await webpush
@@ -471,8 +481,6 @@ export class TimerService implements OnModuleInit {
     }
   }
 
-  // ── BullMQ 잡 스케줄링 ────────────────────────────────────────
-
   private async scheduleSessionJobs(
     roomCode: string,
     template: SessionTemplate,
@@ -492,6 +500,9 @@ export class TimerService implements OnModuleInit {
         removeOnFail: 100,
       },
     );
+    this.logger.log(
+      `[BullMQ] 세션 종료 잡 등록 (room=${roomCode}, delay=${totalMs}ms)`,
+    );
 
     for (let r = 1; r < rounds; r++) {
       const notifyTimeMs = ((focusMin + breakMin) * r - 1) * 60 * 1000;
@@ -506,6 +517,22 @@ export class TimerService implements OnModuleInit {
           removeOnFail: 100,
         },
       );
+
+      const breakStartMs = (focusMin * r + breakMin * (r - 1)) * 60 * 1000;
+      await this.sessionQueue.add(
+        'break-start',
+        { kind: 'break-start', roomCode, round: r },
+        {
+          jobId: breakStartJobId(roomCode, r),
+          delay: breakStartMs,
+          removeOnComplete: true,
+          removeOnFail: 100,
+        },
+      );
+
+      this.logger.log(
+        `[BullMQ] 휴식 알림 잡 등록 (room=${roomCode}, round=${r}, delay=${notifyTimeMs}ms)`,
+      );
     }
   }
 
@@ -518,9 +545,19 @@ export class TimerService implements OnModuleInit {
     const ids = [
       endJobId(roomCode),
       ...Array.from({ length: rounds }, (_, i) => warnJobId(roomCode, i + 1)),
+      ...Array.from({ length: rounds - 1 }, (_, i) =>
+        breakStartJobId(roomCode, i + 1),
+      ),
     ];
     await Promise.all(
       ids.map((id) => this.sessionQueue.remove(id).catch(() => undefined)),
     );
+  }
+
+  async emitEscapeSummary(roomCode: string): Promise<void> {
+    const summary = await this.escapeService.getCurrentSummary(roomCode);
+    this.roomGateway.server
+      .to(roomCode)
+      .emit('escape:summary', { members: summary });
   }
 }

@@ -106,7 +106,7 @@ const getUnrevealedPenaltyCount = (member: ResultMember | null | undefined) =>
 export function Roulette() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
-  const { me, refetchMe } = useAuth();
+  const { me } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
@@ -115,10 +115,6 @@ export function Roulette() {
   const [currentSpinResult, setCurrentSpinResult] =
     useState<SpinRouletteResponse | null>(null);
   const [spinErrorMessage, setSpinErrorMessage] = useState('');
-
-  useEffect(() => {
-    if (!me) void refetchMe();
-  }, [refetchMe, me]);
 
   const {
     data: result,
