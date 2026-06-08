@@ -225,15 +225,35 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private async handleRoomCleanup(roomCode: string): Promise<void> {
     const roomState = await this.roomService.getRoomState(roomCode);
-    if (roomState && roomState.phase === 'result') {
-      return; 
+
+    if (roomState && ['timer', 'result'].includes(roomState.phase)) {
+      if (roomState.phase === 'result') {
+        this.logger.log(
+          `[보호됨] 결과 진행 중이므로 방(${roomCode})을 폭파하지 않습니다.`,
+        );
+        return;
+      }
+      
+      const activeCount = await this.roomService.countActiveMembersInRoom(roomCode);
+
+      if (activeCount > 0) {
+        this.logger.log(
+          `[보호됨] 활성 멤버가 있으므로 방(${roomCode})을 폭파하지 않습니다.`,
+        );
+        return;
+      }
     }
 
     const currentCount = await this.roomService.countConnectedMembers(roomCode);
     if (currentCount === 0) {
-      this.server.to(roomCode).emit('room:closed', { reason: '참여자가 모두 나가서 방이 종료되었습니다.' });
+      this.server.to(roomCode).emit('room:closed', {
+        reason: '회원이 나가서 방이 종료되었습니다.',
+      });
       await this.roomService.deleteRoom(roomCode);
-      setTimeout(() => this.server.in(roomCode).disconnectSockets(), 100);
+
+      setTimeout(() => {
+        this.server.in(roomCode).disconnectSockets();
+      }, 100);
     }
   }
 

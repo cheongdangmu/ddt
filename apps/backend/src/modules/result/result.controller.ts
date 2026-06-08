@@ -1,10 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ResultService } from './result.service';
 import { ResultResponseDto } from './dto/result.dto';
 import { ApiSuccessResponse } from '../../common/swagger/api-success-response.decorator';
