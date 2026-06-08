@@ -368,7 +368,7 @@ export class TimerService implements OnModuleInit {
               jobId: endJobId(room.code),
               delay: remaining,
               removeOnComplete: true,
-              removeOnFail: 100, 
+              removeOnFail: 100,
             },
           )
           .catch(() => undefined);
