@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
@@ -24,6 +24,7 @@ import {
 import { urlBase64ToUint8Array } from '@/lib/utils';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useAuth } from '@/hooks/useAuth';
+import { getRoomApi } from '@/api/generated/room-api/room-api';
 
 export default function Timer() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function Timer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const isFocusRef = useRef(true);
+  const isCheckingRoomPhaseRef = useRef(false);
 
   useEffect(() => {
     if (!sessionInfo) return;
@@ -152,6 +154,33 @@ export default function Timer() {
   const focusDurationSec = (sessionInfo?.focusMin ?? 0) * 60;
   const breakDurationSec = (sessionInfo?.breakMin ?? 0) * 60;
 
+  const syncEndedSessionRoute = useCallback(async () => {
+    if (!sessionInfo || isCheckingRoomPhaseRef.current) return;
+
+    isCheckingRoomPhaseRef.current = true;
+    try {
+      const res = await getRoomApi().roomControllerFindById(room.code);
+      const data = res.data as { phase?: string };
+
+      if (data.phase === 'result') {
+        router.replace(`/room/${room.code}/semi-result`);
+      } else if (data.phase === 'closed') {
+        router.replace(`/room/${room.code}/total-result`);
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        router.replace(`/room/${room.code}/total-result`);
+      }
+    } finally {
+      isCheckingRoomPhaseRef.current = false;
+    }
+  }, [room.code, router, sessionInfo]);
+
+  useEffect(() => {
+    if (phaseRemainingSec > 0) return;
+    void syncEndedSessionRoute();
+  }, [phaseRemainingSec, syncEndedSessionRoute]);
+
   useEffect(() => {
     if (!socket || !sessionInfo) return;
 
@@ -178,12 +207,22 @@ export default function Timer() {
         }
       } else {
         socket.emit('escape:end');
+        void syncEndedSessionRoute();
       }
     };
 
+    const handleFocus = () => {
+      socket.emit('escape:end');
+      void syncEndedSessionRoute();
+    };
+
     document.addEventListener('visibilitychange', handler);
-    return () => document.removeEventListener('visibilitychange', handler);
-  }, [socket, sessionInfo]);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', handler);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [socket, sessionInfo, syncEndedSessionRoute]);
 
   if (!me) return null;
   if (!sessionInfo)
