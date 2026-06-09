@@ -1,6 +1,5 @@
 'use client';
 
-import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { useEffect } from 'react';
@@ -36,12 +35,12 @@ export default function RootLayout({
       lang='ko'
       className={`${notoSansKR.variable} h-full antialiased dark`}
     >
-      <body className='min-h-full flex justify-center bg-zinc-500'>
+      <body className='min-h-full flex justify-center bg-background sm:bg-zinc-500'>
         <QueryProvider>
           <OAuthMessageHandler />
           <SessionRestorer />
           <AuthPrefetch />
-          <div className='relative w-full max-w-97.5 min-h-screen flex flex-col bg-background sm:border-x sm:border-border sm:shadow-[0_0_40px_rgba(0,0,0,0.6)]'>
+          <div className='relative w-full sm:max-w-97.5 min-h-dvh flex flex-col bg-background sm:border-x sm:border-border sm:shadow-[0_0_40px_rgba(0,0,0,0.6)]'>
             {children}
           </div>
           <Toaster position='top-center' richColors />

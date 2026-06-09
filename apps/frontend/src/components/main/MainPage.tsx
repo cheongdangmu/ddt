@@ -43,7 +43,7 @@ export const MainPage = () => {
   };
 
   return (
-    <div className='relative min-h-screen w-full overflow-hidden text-white'>
+    <div className='relative min-h-dvh w-full overflow-hidden text-white'>
       {/* 배경 이미지 */}
       <Image
         src='/images/mainBackground.webp'
@@ -89,7 +89,7 @@ export const MainPage = () => {
       </div>
 
       {/* 본문 */}
-      <div className='relative z-10 flex min-h-screen flex-col px-6 pb-8 pt-20'>
+      <div className='relative z-10 flex min-h-dvh flex-col px-6 pb-8 pt-20'>
         <Image
           src='/images/logo.webp'
           alt='감옥'
