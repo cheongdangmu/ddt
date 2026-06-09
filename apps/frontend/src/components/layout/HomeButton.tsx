@@ -30,7 +30,7 @@ export function HomeButton({
       onClick={onClick ?? (() => router.push('/'))}
       aria-label={ariaLabel}
       className={cn(
-        'rounded-full text-white/80 hover:bg-white/10',
+        'rounded-full text-white/75 hover:bg-white/10',
         className,
       )}
       {...props}

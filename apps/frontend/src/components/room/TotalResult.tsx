@@ -288,7 +288,7 @@ export function TotalResult() {
                           {member.isAllClear ? (
                             <ThumbsUp className='h-4 w-7 shrink-0 text-[#FBBF24]' />
                           ) : (
-                            <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F85A5A]/15 text-xs font-bold text-[#F85A5A]'>
+                            <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-xs font-bold text-destructive'>
                               {member.rank}
                             </div>
                           )}
@@ -311,7 +311,7 @@ export function TotalResult() {
                                 {isMe ? ' (나)' : ''}
                               </span>
                               {member.gaveUpAt ? (
-                                <Badge className='h-5 shrink-0 border-none bg-[#F85A5A] px-1.5 text-[10px] font-bold text-white hover:bg-[#F85A5A]'>
+                                <Badge className='h-5 shrink-0 border-none bg-destructive px-1.5 text-[10px] font-bold text-white hover:bg-destructive'>
                                   중도 포기
                                 </Badge>
                               ) : null}

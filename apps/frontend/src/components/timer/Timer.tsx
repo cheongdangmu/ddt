@@ -310,7 +310,7 @@ export default function Timer() {
                 type='button'
                 onClick={handleForfeit}
                 disabled={giveUpMutation.isPending}
-                className='flex-1 py-5 bg-[#F85A5A] hover:bg-[#E04F4F] text-white font-bold rounded-xl transition-colors border-none'
+                className='flex-1 py-5 bg-destructive hover:bg-destructive/80 text-white font-bold rounded-xl transition-colors border-none'
               >
                 {giveUpMutation.isPending ? '처리 중...' : '포기하기'}
               </Button>
@@ -346,7 +346,7 @@ export default function Timer() {
 
         {!isWakeLockSupported && (
           <div className='text-center mt-4 w-full max-w-sm px-4'>
-            <div className='flex items-start justify-center gap-2 bg-[#F85A5A]/10 border border-[#F85A5A]/30 rounded-xl px-4 py-3 text-xs text-[#F85A5A]'>
+            <div className='flex items-start justify-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 text-xs text-destructive'>
               <span>
                 현재 기기에서 화면 꺼짐 방지가 지원되지 않습니다.
                 <br />

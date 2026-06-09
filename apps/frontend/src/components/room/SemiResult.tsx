@@ -136,7 +136,7 @@ export function SemiResult() {
             </div>
           ) : null}
           {isError ? (
-            <div className='py-10 text-sm text-[#F85A5A]'>
+            <div className='py-10 text-sm text-destructive'>
               결과를 불러오지 못했습니다.
             </div>
           ) : null}
@@ -207,7 +207,7 @@ export function SemiResult() {
                   let rankColor = 'text-slate-500';
                   if (isTopRank && !isNoDisruption) {
                     if (member.rank === 1)
-                      rankColor = 'font-bold text-[#F85A5A]';
+                      rankColor = 'font-bold text-destructive';
                     else if (member.rank === 2) {
                       rankColor = 'font-bold text-[#F59E0B]';
                     } else if (member.rank === 3) {
@@ -241,7 +241,7 @@ export function SemiResult() {
                           <span
                             className={`text-xs font-semibold tracking-tight ${
                               member.gaveUpAt
-                                ? 'text-[#F85A5A]'
+                                ? 'text-destructive'
                                 : 'text-slate-200'
                             }`}
                           >
@@ -251,7 +251,7 @@ export function SemiResult() {
                           </span>
 
                           {member.gaveUpAt && !isNoDisruption ? (
-                            <Badge className='h-4 rounded-full border-none bg-[#F85A5A] px-1.5 py-0 text-[9px] font-bold text-white hover:bg-[#F85A5A]'>
+                            <Badge className='h-4 rounded-full border-none bg-destructive px-1.5 py-0 text-[9px] font-bold text-white hover:bg-destructive'>
                               중도 포기
                             </Badge>
                           ) : null}
