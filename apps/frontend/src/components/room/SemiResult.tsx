@@ -126,12 +126,11 @@ export function SemiResult() {
   );
 
   return (
-    <div className='min-h-screen bg-[#0F111A] font-sans text-slate-100 antialiased'>
-      <MobileLayout
-        header={HeaderComponent}
-        bottomButton={BottomButtonComponent}
-      >
-        <div className='flex w-full flex-col items-center space-y-6 px-1 pb-8 pt-4'>
+    <MobileLayout
+      header={HeaderComponent}
+      bottomButton={BottomButtonComponent}
+    >
+      <div className='flex w-full flex-col items-center space-y-6 px-1 pb-8 pt-4'>
           {isLoading ? (
             <div className='py-10 text-sm text-slate-400'>
               결과를 불러오는 중...
@@ -274,7 +273,6 @@ export function SemiResult() {
             </>
           ) : null}
         </div>
-      </MobileLayout>
-    </div>
+    </MobileLayout>
   );
 }
