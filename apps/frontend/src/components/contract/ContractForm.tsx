@@ -203,7 +203,7 @@ const ContractForm = () => {
       }
     >
       <div className='flex flex-col gap-5'>
-        <div className='flex flex-col gap-5 bg-(--surface) rounded-xl'>
+        <div className='flex flex-col gap-5  rounded-xl'>
           <RoomTitle
             isConnected={isConnected}
             title={room.title}
@@ -247,7 +247,7 @@ const ContractForm = () => {
             </form>
           </FormProvider>
         </div>
-        <div className='flex flex-col gap-5 bg-(--surface) rounded-xl mb-10'>
+        <div className='flex flex-col gap-5  rounded-xl mb-10'>
           <div className='flex flex-col mt-10 mb-5 items-center'>
             <p className='text-xl text-success'>모든 멤버가 서명해야</p>
             <p className='text-xl text-success'>타이머를 시작할 수 있어요!</p>
@@ -258,7 +258,8 @@ const ContractForm = () => {
         <div className='flex w-full gap-2'>
           <Button
             type='button'
-            className='flex-1 py-5! rounded-sm! bg-card! border border-white/10'
+            variant='secondary'
+            className='flex-1 h-12 rounded-[14px] text-base font-bold'
             onClick={handleLeaveRoom}
           >
             나가기
@@ -267,7 +268,7 @@ const ContractForm = () => {
             <Button
               type='button'
               disabled={!isMeSigned}
-              className='flex-1 py-5! rounded-sm! bg-destructive'
+              className='flex-1 h-12 rounded-[14px] text-base font-bold bg-destructive'
               onClick={async () => {
                 await handleForceStartFocus();
               }}
@@ -282,7 +283,7 @@ const ContractForm = () => {
               onClick={async () => {
                 await handleStartFocus();
               }}
-              className='flex-1 py-5! rounded-sm!'
+              className='flex-1 h-12 rounded-[14px] text-base font-bold'
             >
               {startTimerMutation.isPending ? '시작 중...' : '집중 시작'}
             </Button>

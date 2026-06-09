@@ -114,7 +114,7 @@ export function SemiResult() {
         )
       }
       disabled={isLoading || isError || !canDecideNextRoute}
-      className='w-full rounded-xl border-none bg-[#7C3AED] py-6 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#6D28D9]'
+      className='w-full h-12 rounded-[14px] text-base font-bold'
     >
       {!canDecideNextRoute
         ? '확인 중...'
@@ -129,14 +129,14 @@ export function SemiResult() {
       header={HeaderComponent}
       bottomButton={BottomButtonComponent}
     >
-      <div className='flex w-full flex-col items-center space-y-6 px-1 pb-8 pt-4'>
+      <div className='flex min-w-0 flex-col gap-4 text-foreground'>
           {isLoading ? (
-            <div className='py-10 text-sm text-slate-400'>
+            <div className='py-10 text-center text-sm text-muted-foreground'>
               결과를 불러오는 중...
             </div>
           ) : null}
           {isError ? (
-            <div className='py-10 text-sm text-destructive'>
+            <div className='py-10 text-center text-sm text-destructive'>
               결과를 불러오지 못했습니다.
             </div>
           ) : null}
@@ -149,7 +149,7 @@ export function SemiResult() {
                     <h2 className='text-xl font-bold tracking-tight text-[#FBBF24]'>
                       이탈 유저가 아무도 없어요!
                     </h2>
-                    <p className='text-xs font-medium text-slate-400'>
+                    <p className='mt-2 text-sm font-medium text-foreground/80'>
                       오늘 집중력은 최고네요.
                     </p>
                   </>
@@ -159,116 +159,96 @@ export function SemiResult() {
                     <h2 className='text-xl font-bold tracking-tight text-[#10B981]'>
                       집중시간이 종료되었습니다.
                     </h2>
-                    <p className='text-xs font-medium text-slate-400'>
+                    <p className='mt-2 text-sm font-medium text-foreground/80'>
                       결과를 확인해 주세요.
                     </p>
                   </>
                 )}
               </div>
 
-              <div className='grid w-full grid-cols-3 items-center divide-x divide-slate-800 rounded-2xl border border-slate-800/60 bg-[#1A1F31] p-4 text-center'>
-                <div className='space-y-1.5'>
-                  <p className='text-[10px] font-medium text-slate-400'>
-                    총 진행 시간
-                  </p>
-                  <p className='text-sm font-bold text-slate-200'>
+              <section className='grid grid-cols-3 overflow-hidden rounded-[14px] bg-[#1A1F31] text-center text-[11px] text-white/50'>
+                <div className='flex min-w-0 flex-col items-center gap-1 border-r border-white/10 px-2.5 py-3'>
+                  <span>총 진행 시간</span>
+                  <strong className='text-base text-white/85'>
                     {totalTime}
-                  </p>
+                  </strong>
                 </div>
-                <div className='space-y-1.5'>
-                  <p className='text-[10px] font-medium text-slate-400'>
-                    완료한 반복
-                  </p>
-                  <p className='text-sm font-bold text-slate-200'>
+                <div className='flex min-w-0 flex-col items-center gap-1 border-r border-white/10 px-2.5 py-3'>
+                  <span>완료한 반복</span>
+                  <strong className='text-base text-white/85'>
                     {completedSessions}
-                  </p>
+                  </strong>
                 </div>
-                <div className='space-y-1.5'>
-                  <p className='text-[10px] font-medium text-slate-400'>
-                    벌칙 수행자
-                  </p>
-                  <p className='text-sm font-bold text-slate-200'>
+                <div className='flex min-w-0 flex-col items-center gap-1 px-2.5 py-3'>
+                  <span>벌칙 수행자</span>
+                  <strong className='text-base text-white/85'>
                     {isNoDisruption ? '0명' : `${result.penaltyMemberCount}명`}
-                  </p>
+                  </strong>
                 </div>
-              </div>
+              </section>
 
-              <div className='w-full pl-1 text-left'>
-                <p className='text-xs font-semibold tracking-wider text-slate-400'>
+              <section className='flex flex-col gap-2'>
+                <h3 className='px-1 text-xs font-semibold text-muted-foreground'>
                   {isNoDisruption ? '참여 멤버' : '이탈 시간 순위'}
-                </p>
-              </div>
+                </h3>
 
-              <div className='w-full divide-y divide-slate-800/40 overflow-hidden rounded-2xl border border-slate-900 bg-[#151926]'>
-                {rankedMembers.map((member) => {
-                  const isTopRank = member.rank <= 3;
-                  const isMe = me?.role === 'user' && member.userId === me.id;
+                <div className='overflow-hidden rounded-2xl border border-slate-800/70 bg-[#151926]'>
+                  {rankedMembers.map((member) => {
+                    const isMe = me?.role === 'user' && member.userId === me.id;
 
-                  let rankColor = 'text-slate-500';
-                  if (isTopRank && !isNoDisruption) {
-                    if (member.rank === 1)
-                      rankColor = 'font-bold text-destructive';
-                    else if (member.rank === 2) {
-                      rankColor = 'font-bold text-[#F59E0B]';
-                    } else if (member.rank === 3) {
-                      rankColor = 'font-bold text-[#FBBF24]';
-                    }
-                  }
+                    return (
+                      <div
+                        key={member.memberId}
+                        className='flex items-center justify-between border-b border-slate-800/50 px-4 py-3 last:border-b-0'
+                      >
+                        <div className='flex min-w-0 items-center gap-3'>
+                          {member.isAllClear || isNoDisruption ? (
+                            <ThumbsUp className='h-4 w-7 shrink-0 text-[#FBBF24]' />
+                          ) : (
+                            <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-xs font-bold text-destructive'>
+                              {member.rank}
+                            </div>
+                          )}
 
-                  return (
-                    <div
-                      key={member.memberId}
-                      className='flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-slate-800/20'
-                    >
-                      <div className='flex items-center gap-3.5'>
-                        {member.isAllClear || isNoDisruption ? (
-                          <ThumbsUp className='h-4 w-4 flex-shrink-0 fill-[#FBBF24]/20 text-[#FBBF24]' />
-                        ) : (
-                          <span
-                            className={`w-4 text-center text-xs ${rankColor}`}
-                          >
-                            {member.rank}
-                          </span>
-                        )}
+                          <Avatar className='h-9 w-9 border border-slate-700 bg-[#22293F]'>
+                            <AvatarFallback className='bg-transparent text-xs text-slate-300'>
+                              {member.nickname.slice(0, 1)}
+                            </AvatarFallback>
+                          </Avatar>
 
-                        <Avatar className='h-8 w-8 border border-slate-800 bg-[#22293F]'>
-                          <AvatarFallback className='bg-transparent text-xs text-slate-300'>
-                            {member.nickname.slice(0, 1)}
-                          </AvatarFallback>
-                        </Avatar>
+                          <div className='min-w-0'>
+                            <div className='flex min-w-0 items-center gap-1.5'>
+                              <span
+                                className={`truncate text-sm font-semibold ${
+                                  member.gaveUpAt
+                                    ? 'text-destructive'
+                                    : 'text-slate-100'
+                                }`}
+                              >
+                                {member.nickname}
+                                {member.isHost && ' (방장)'}
+                                {isMe && ' (나)'}
+                              </span>
 
-                        <div className='flex items-center gap-1.5'>
-                          <span
-                            className={`text-xs font-semibold tracking-tight ${
-                              member.gaveUpAt
-                                ? 'text-destructive'
-                                : 'text-slate-200'
-                            }`}
-                          >
-                            {member.nickname}
-                            {member.isHost && ' (방장)'}
-                            {isMe && ' (나)'}
-                          </span>
-
-                          {member.gaveUpAt && !isNoDisruption ? (
-                            <Badge className='h-4 rounded-full border-none bg-destructive px-1.5 py-0 text-[9px] font-bold text-white hover:bg-destructive'>
-                              중도 포기
-                            </Badge>
-                          ) : null}
+                              {member.gaveUpAt && !isNoDisruption ? (
+                                <Badge className='h-5 shrink-0 border-none bg-destructive px-1.5 text-[10px] font-bold text-white hover:bg-destructive'>
+                                  중도 포기
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className='text-right'>
-                        <span className='text-xs font-medium text-slate-400'>
+                        <span className='shrink-0 text-xs font-medium text-slate-400'>
                           {!isNoDisruption && member.penalties.totalCount > 0
                             ? `벌칙 ${member.penalties.totalCount}개`
                             : '-'}
                         </span>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </section>
             </>
           ) : null}
         </div>

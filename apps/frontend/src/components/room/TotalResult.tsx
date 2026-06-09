@@ -165,6 +165,7 @@ export function TotalResult() {
   const rankedMembers = [...(result?.members ?? [])].sort(
     (a, b) => a.rank - b.rank || b.totalEscapeMs - a.totalEscapeMs,
   );
+  const isSolo = rankedMembers.length <= 1;
   const penaltyMembers = rankedMembers.filter(
     (member) => member.penalties.totalCount > 0,
   );
@@ -215,10 +216,45 @@ export function TotalResult() {
     </>
   );
 
+  const BottomButtonComponent = (
+    <div className='flex flex-col gap-2.5 bg-linear-to-t from-background from-65% to-transparent px-4 pt-8 pb-[calc(env(safe-area-inset-bottom)+12px)]'>
+      <Button
+        type='button'
+        variant='outline'
+        onClick={() => setIsContractDialogOpen(true)}
+        className='h-12 w-full rounded-[14px] border-primary text-base font-bold text-white'
+      >
+        계약서 보기
+      </Button>
+      <div className='grid grid-cols-2 gap-2.5'>
+        <Button
+          type='button'
+          variant='secondary'
+          onClick={handleShare}
+          className='h-12 rounded-[14px] border border-white/10 bg-[#1A1F31] text-base font-bold text-white/85'
+        >
+          공유하기
+        </Button>
+        <Button
+          type='button'
+          variant='secondary'
+          onClick={() => router.push(isLoggedInUser ? '/mypage' : '/')}
+          className='h-12 rounded-[14px] border border-white/10 bg-[#1A1F31] text-base font-bold text-white/85'
+        >
+          {isLoggedInUser ? '마이페이지' : '홈 화면으로 이동'}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <MobileLayout header={HeaderComponent}>
-        <div className='flex min-w-0 flex-col gap-4 pb-36 text-foreground'>
+      <MobileLayout
+        header={HeaderComponent}
+        bottomButton={result ? BottomButtonComponent : undefined}
+        bottomFloating
+      >
+        <div className='flex min-w-0 flex-col gap-4 text-foreground'>
           {isLoading ? (
             <div className='py-10 text-center text-sm text-muted-foreground'>
               통합 결과를 불러오는 중...
@@ -232,8 +268,8 @@ export function TotalResult() {
           {result ? (
             <>
               <section className='flex flex-col items-center px-4 py-5 text-center'>
-                <div className='mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary'>
-                  <Trophy className='h-5 w-5' />
+                <div className='mb-2 flex h-9 w-9 items-center justify-center rounded-full text-primary'>
+                  <Trophy className='h-5 w-5 text-[#FBBF24]' />
                 </div>
                 <h2 className='text-xl font-bold text-[#FBBF24]'>
                   모두 고생했어요!
@@ -270,7 +306,7 @@ export function TotalResult() {
                 <h3 className='px-1 text-xs font-semibold text-muted-foreground'>
                   이탈 시간 순위
                 </h3>
-                <div className='overflow-hidden rounded-2xl border border-slate-800/70 bg-[#151926]'>
+                <div className='overflow-hidden rounded-[14px] border border-slate-800/70 bg-[#151926]'>
                   {rankedMembers.map((member) => {
                     const isMe = me
                       ? (me.role === 'user' && member.userId === me.id) ||
@@ -308,7 +344,7 @@ export function TotalResult() {
                               <span className='truncate text-sm font-semibold text-slate-100'>
                                 {member.nickname}
                                 {member.isHost ? ' (방장)' : ''}
-                                {isMe ? ' (나)' : ''}
+                                {isMe && !isSolo ? ' (나)' : ''}
                               </span>
                               {member.gaveUpAt ? (
                                 <Badge className='h-5 shrink-0 border-none bg-destructive px-1.5 text-[10px] font-bold text-white hover:bg-destructive'>
@@ -331,7 +367,7 @@ export function TotalResult() {
                 <h3 className='px-1 text-xs font-semibold text-muted-foreground'>
                   멤버별 벌칙 결과
                 </h3>
-                <div className='overflow-hidden rounded-xl bg-[#181828]'>
+                <div className='overflow-hidden rounded-[14px] bg-[#181828]'>
                   {penaltyMembers.length > 0 ? (
                     penaltyMembers.map((member) => {
                       const isMe =
@@ -374,7 +410,7 @@ export function TotalResult() {
                               <span className='truncate text-sm font-medium text-white/85'>
                                 {member.nickname}
                                 {member.isHost ? ' (방장)' : ''}
-                                {isMe ? ' (본인)' : ''}
+                                {isMe && !isSolo ? ' (본인)' : ''}
                               </span>
                             </div>
                             <span
@@ -432,38 +468,10 @@ export function TotalResult() {
         </div>
       </MobileLayout>
 
-      {/* 뷰포트 기준 하단 고정 — 컨테이너 폭(w-full sm:max-w-97.5)에 맞춰 중앙정렬 */}
-      <div className='fixed bottom-0 left-1/2 z-50 w-full sm:max-w-97.5 -translate-x-1/2 border-t border-border bg-background px-4 pb-5 pt-3'>
-        <div className='flex flex-col gap-2.5'>
-          <Button
-            type='button'
-            onClick={() => setIsContractDialogOpen(true)}
-            className='h-[54px] w-full rounded-[14px] bg-primary text-sm font-bold text-primary-foreground'
-          >
-            계약서 보기
-          </Button>
-          <div className='grid grid-cols-2 gap-2.5'>
-            <Button
-              type='button'
-              variant='secondary'
-              onClick={handleShare}
-              className='h-12 rounded-[14px] border border-white/10 bg-[#1A1F31] text-sm font-bold text-white/85'
-            >
-              공유하기
-            </Button>
-            <Button
-              type='button'
-              variant='secondary'
-              onClick={() => router.push(isLoggedInUser ? '/mypage' : '/')}
-              className='h-12 rounded-[14px] border border-white/10 bg-[#1A1F31] text-sm font-bold text-white/85'
-            >
-              {isLoggedInUser ? '마이페이지' : '홈 화면으로 이동'}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <Dialog open={isContractDialogOpen} onOpenChange={setIsContractDialogOpen}>
+      <Dialog
+        open={isContractDialogOpen}
+        onOpenChange={setIsContractDialogOpen}
+      >
         <DialogContent className='max-h-[82vh] w-[calc(100%-36px)] max-w-[354px] overflow-y-auto rounded-[18px] border border-white/10 bg-[#0f0d1a] p-[18px] pt-12 text-left text-white/85'>
           <DialogClose asChild>
             <Button

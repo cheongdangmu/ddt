@@ -240,7 +240,7 @@ export const MyPage = () => {
             {card.icon ? (
               <Clock3
                 className='absolute -bottom-[28px] left-1/2 size-[78px] -translate-x-1/2 text-white/10'
-                strokeWidth={2.6}
+                strokeWidth={1.6}
               />
             ) : null}
           </div>

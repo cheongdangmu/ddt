@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getResultApi } from '@/api/generated/result-api-결과-조회/result-api-결과-조회';
 import { getRouletteApi } from '@/api/generated/roulette-api-벌칙-룰렛/roulette-api-벌칙-룰렛';
@@ -26,6 +25,7 @@ import type {
   ResultResponseDto,
   SpinRouletteResponseDto,
 } from '@/api/generated/models';
+import { CloseButton } from '../layout/CloseButton';
 
 const PenaltyRoulette = dynamic(
   () => import('@/components/ui/custom-roulette'),
@@ -365,6 +365,17 @@ export function Roulette() {
     setCurrentSpinResult(null);
   }, [currentSpinResult]);
 
+  const selectedPenaltyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (history.length > 0) {
+      selectedPenaltyRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [history.length]);
+
   const handleExit = () => {
     if (isGiveUpRoulette) {
       router.push(finishTarget);
@@ -377,28 +388,22 @@ export function Roulette() {
   return (
     <MobileLayout
       header={
-        <div className='relative flex w-full items-center justify-between text-foreground'>
+        <div className='flex w-full items-center justify-between text-foreground'>
           <span className='mx-auto text-lg font-medium'>벌칙 룰렛</span>
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <CloseButton
             onClick={() =>
               !isSpinning && !isAllCompleted && setIsDialogOpen(true)
             }
-            disabled={isSpinning || isAllCompleted}
-            className='absolute right-0 rounded-full text-icon disabled:opacity-40'
             aria-label='룰렛 나가기'
-          >
-            <X className='h-5 w-5' />
-          </Button>
+            disabled={isSpinning || isAllCompleted}
+          ></CloseButton>
         </div>
       }
       bottomButton={
         <Button
           variant='default'
           size='main'
-          className='w-full rounded-xl'
+          className='w-full rounded-[14px] font-bold'
           onClick={handleStartSpinning}
           disabled={cannotStart && !isAllCompleted}
         >
@@ -422,7 +427,7 @@ export function Roulette() {
       }
     >
       <div className='flex min-w-0 flex-col gap-6 pb-6 text-foreground'>
-        <div className='rounded-2xl border border-[var(--roulette-panel-border)] bg-[var(--roulette-panel)] p-4 text-center'>
+        <div className='rounded-[14px] border border-[var(--roulette-panel-border)] bg-[var(--roulette-panel)] p-4 text-center'>
           <div className='text-sm text-muted-foreground'>
             남은 시간
             <span className='ml-1 text-base font-bold text-destructive'>
@@ -465,33 +470,31 @@ export function Roulette() {
           ) : null}
         </div>
 
-        <div className='flex flex-col gap-2'>
-          <h3 className='mb-1 text-sm font-semibold text-muted-foreground'>
-            선택된 벌칙
-          </h3>
-          {history.map((penalty, idx) => (
-            <div
-              key={`${penalty}-${idx}`}
-              className='flex items-center gap-3 rounded-xl border border-[var(--roulette-history-border)] bg-[var(--roulette-history)] p-4'
-            >
-              <div className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground'>
-                {idx + 1}
+        {history.length > 0 && (
+          <div ref={selectedPenaltyRef} className='flex flex-col gap-2'>
+            <h3 className='mb-1 text-sm font-semibold text-muted-foreground'>
+              선택된 벌칙
+            </h3>
+            {history.map((penalty, idx) => (
+              <div
+                key={`${penalty}-${idx}`}
+                className='flex items-center gap-3 rounded-xl border border-[var(--roulette-history-border)] bg-[var(--roulette-history)] p-4'
+              >
+                <div className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground'>
+                  {idx + 1}
+                </div>
+                <span className='min-w-0 text-sm font-medium'>{penalty}</span>
               </div>
-              <span className='min-w-0 text-sm font-medium'>{penalty}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              룰렛 횟수가 아직 남았어요.
-            </DialogTitle>
-            <DialogDescription>
-              벌칙이 자동으로 결정돼요.
-            </DialogDescription>
+            <DialogTitle>룰렛 횟수가 아직 남았어요.</DialogTitle>
+            <DialogDescription>벌칙이 자동으로 결정돼요.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button

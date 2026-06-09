@@ -290,7 +290,7 @@ export default function Timer() {
           <DialogTrigger asChild>
             <Button
               type='button'
-              className='w-full py-4 bg-transparent border border-border text-muted-foreground rounded-xl hover:bg-muted/30 transition-colors'
+              className='w-full h-12 rounded-[14px] text-base font-bold bg-transparent border border-border text-muted-foreground hover:bg-muted/30 transition-colors'
             >
               중도 포기
             </Button>

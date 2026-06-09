@@ -65,7 +65,7 @@ function CreateRoomComplete({
         {/* 비밀번호 */}
         <div className='flex flex-col gap-1'>
           <span className='text-xs text-[#6B7280]'>비밀번호</span>
-          <span className='text-sm font-semibold text-white'>{password}</span>
+          <span className='text-2xl font-semibold text-white'>{password}</span>
         </div>
 
         <div className='border-t border-white/[0.08]' />
@@ -88,11 +88,11 @@ function CreateRoomComplete({
       </div>
 
       {/* 안내 문구 */}
-      <div className='flex items-start gap-2 text-xs text-muted-foreground leading-relaxed'>
+      <div className='flex items-center gap-2 text-xs text-muted-foreground leading-relaxed'>
         <Lightbulb size={14} className='text-[#FACC15] shrink-0 mt-0.5' />
         <span>
-          링크와 비밀번호를 공유하여 같이 집중할 멤버들과 함께 입장해
-          시작해보세요!
+          링크와 비밀번호를 공유하여 <br />
+          같이 집중할 멤버들과 함께 입장해 시작해보세요!
         </span>
       </div>
 
@@ -242,10 +242,7 @@ export const CreateRoom = () => {
         }
         bottomButton={
           step === 'complete' ? (
-            <Button
-              size='cta'
-              onClick={() => router.push(`/room/${roomCode}`)}
-            >
+            <Button size='cta' onClick={() => router.push(`/room/${roomCode}`)}>
               입장하기
             </Button>
           ) : (

@@ -63,7 +63,7 @@ export const MainPage = () => {
             variant='ghost'
             size='sm'
             asChild
-            className='border border-white/20 px-3 py-3 rounded-sm!'
+            className='border border-white/25 bg-black/35 backdrop-blur-sm px-3 py-3 rounded-sm!'
           >
             <Link href='/mypage'>마이페이지</Link>
           </Button>
@@ -72,7 +72,7 @@ export const MainPage = () => {
             variant='ghost'
             size='sm'
             onClick={handleLogout}
-            className='border border-white/20 px-3 py-3 rounded-sm!'
+            className='border border-white/25 bg-black/35 backdrop-blur-sm px-3 py-3 rounded-sm!'
           >
             로그아웃
           </Button>
@@ -81,7 +81,7 @@ export const MainPage = () => {
             variant='ghost'
             size='sm'
             onClick={handleOpenTerms}
-            className='border border-white/20 px-3 py-3 rounded-sm!'
+            className='border border-white/25 bg-black/35 backdrop-blur-sm px-3 py-3 rounded-sm!'
           >
             로그인
           </Button>
