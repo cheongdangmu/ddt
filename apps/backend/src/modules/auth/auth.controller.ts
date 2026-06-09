@@ -59,16 +59,11 @@ export class AuthController {
     const user = await this.authService.validateOAuthLogin(req.user);
     const token = this.authService.generateJwt(user);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const callbackUrl = `${frontendUrl}/auth/callback?token=${encodeURIComponent(token)}`;
 
     res.send(`
       <html><body><script>
-        if (window.opener && !window.opener.closed) {
-          window.opener.postMessage({ type: 'OAUTH_SUCCESS', token: '${token}' }, '${frontendUrl}');
-          window.close();
-        } else {
-          window.location.replace('${callbackUrl}');
-        }
+        window.opener.postMessage({ type: 'OAUTH_SUCCESS', token: '${token}' }, '${frontendUrl}');
+        window.close();
       </script></body></html>
     `);
   }

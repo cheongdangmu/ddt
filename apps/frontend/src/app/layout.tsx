@@ -3,6 +3,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { useEffect } from 'react';
 import './globals.css';
 import { SessionRestorer } from '@/components/room/SessionRestorer';
 import { QueryProvider } from '@/components/providers/QueryProvider';
@@ -21,6 +22,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => console.log('서비스 워커 등록 성공:', reg))
+        .catch((err) => console.error('서비스 워커 등록 실패:', err));
+    }
+  }, []);
+
   return (
     <html
       lang='ko'

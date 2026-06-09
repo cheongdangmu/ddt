@@ -8,14 +8,38 @@ import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { MobileLayout } from '@/components/layout/mobileLayout';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  EMPTY_TERMS_AGREEMENT,
-  PENDING_TERMS_KEY,
-  readPendingTerms,
-  type TermsAgreement,
-} from '@/lib/authTerms';
 
-export const TermsPage = ({ isPopup = false }: { isPopup?: boolean }) => {
+const PENDING_TERMS_KEY = 'pending_google_terms_agreement';
+
+type TermsAgreement = {
+  termsOfService: boolean;
+  privacyPolicy: boolean;
+  ageVerification: boolean;
+};
+
+const EMPTY_TERMS_AGREEMENT: TermsAgreement = {
+  termsOfService: false,
+  privacyPolicy: false,
+  ageVerification: false,
+};
+
+const readPendingTerms = (): TermsAgreement | null => {
+  try {
+    const value = sessionStorage.getItem(PENDING_TERMS_KEY);
+    if (!value) return null;
+
+    const parsed = JSON.parse(value) as Partial<TermsAgreement>;
+    return {
+      termsOfService: !!parsed.termsOfService,
+      privacyPolicy: !!parsed.privacyPolicy,
+      ageVerification: !!parsed.ageVerification,
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const TermsPage = () => {
   const [agreement, setAgreement] = useState<TermsAgreement>(
     () => readPendingTerms() ?? EMPTY_TERMS_AGREEMENT,
   );
@@ -63,7 +87,7 @@ export const TermsPage = ({ isPopup = false }: { isPopup?: boolean }) => {
     <MobileLayout
       header={
         <>
-          {!isPopup ? <BackButton /> : null}
+          <BackButton />
           <HeaderTitle>약관 동의</HeaderTitle>
         </>
       }
@@ -73,6 +97,7 @@ export const TermsPage = ({ isPopup = false }: { isPopup?: boolean }) => {
           disabled={!allChecked || isLoading}
           onClick={handleGoogleLogin}
         >
+          <span className='mr-2'>G</span>
           {isLoading ? '처리 중...' : 'Google로 계속하기'}
         </Button>
       }
