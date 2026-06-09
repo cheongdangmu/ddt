@@ -48,8 +48,9 @@ export function useYjsContract(
   const yjsFieldsRef = useRef<Y.Map<number> | null>(null);
   const yjsTiersRef = useRef<Y.Array<Tier> | null>(null);
   const yjsPenaltiesRef = useRef<Y.Array<Penalty> | null>(null);
-  const isHostRef = useRef(isHost);
 
+  // isHost는 effect 재실행을 피하기 위해 ref로 추적한다.
+  const isHostRef = useRef(isHost);
   useEffect(() => {
     isHostRef.current = isHost;
   }, [isHost]);
@@ -57,17 +58,6 @@ export function useYjsContract(
   useEffect(() => {
     socketRef.current = socket;
   }, [socket]);
-
-  useEffect(() => {
-    if (!isHost || !yjsTiersRef.current || !docRef.current) return;
-    if (yjsTiersRef.current.length === 0) {
-      docRef.current.transact(() => {
-        yjsTiersRef.current!.push([
-          { tier: 1, minPct: 0, maxPct: null, count: 0 },
-        ]);
-      });
-    }
-  }, [isHost]);
 
   useEffect(() => {
     if (!roomCode || !enabled) {
