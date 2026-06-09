@@ -74,7 +74,7 @@ export default function MemberSignList() {
                   src={
                     getProfileImageSrc(myProfileImage) ?? '/avatars/bear.png'
                   }
-                  alt={me.id}
+                  alt={`${myNickname} 프로필 이미지`}
                   width={40}
                   height={40}
                   className={cn(
