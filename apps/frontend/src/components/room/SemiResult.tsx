@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MobileLayout } from '@/components/layout/mobileLayout';
+import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { useAuth } from '@/hooks/useAuth';
 
 type ResultMember = {
@@ -100,9 +101,7 @@ export function SemiResult() {
   if (isNoDisruption) return null;
 
   const HeaderComponent = (
-    <div className='w-full py-2 text-center'>
-      <h1 className='text-base font-medium tracking-tight text-white'>결과</h1>
-    </div>
+    <HeaderTitle align='center'>결과</HeaderTitle>
   );
 
   const BottomButtonComponent = (

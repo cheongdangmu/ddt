@@ -11,6 +11,7 @@ import { useSocket } from '@/contexts/SocketContext';
 import { EscapeSummaryItem, useRoomStore } from '@/store/useRoomStore';
 import { Button } from '@/components/ui/button';
 import { MobileLayout } from '@/components/layout/mobileLayout';
+import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { TimerProgressBar } from '@/components/ui/timerprogressbar';
 import { TimerCircle } from '@/components/ui/timercircle';
 import {
@@ -270,7 +271,7 @@ export default function Timer() {
     );
 
   const theme = {
-    textColor: isFocus ? 'text-primary' : 'text-success',
+    textColor: isFocus ? '' : 'text-success',
     strokeColor: isFocus ? 'stroke-primary' : 'stroke-success',
     statusText: isFocus ? '집중 시간' : '휴식 시간',
     subStatusText: isFocus ? '집중 중' : '휴식 중',
@@ -279,11 +280,9 @@ export default function Timer() {
   return (
     <MobileLayout
       header={
-        <div className='w-full text-center'>
-          <h1 className={`text-xl font-bold ${theme.textColor}`}>
-            {theme.statusText} {round} / {totalRounds}
-          </h1>
-        </div>
+        <HeaderTitle align='center' className={theme.textColor}>
+          {theme.statusText} {round} / {totalRounds}
+        </HeaderTitle>
       }
       bottomButton={
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

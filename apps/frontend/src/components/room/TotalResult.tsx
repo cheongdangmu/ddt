@@ -9,6 +9,7 @@ import { getResultApi } from '@/api/generated/result-api-결과-조회/result-ap
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -208,8 +209,8 @@ export function TotalResult() {
   };
 
   const HeaderComponent = (
-    <div className='relative flex w-full items-center justify-center text-foreground'>
-      <h1 className='text-base font-medium tracking-tight'>통합 결과</h1>
+    <div className='relative flex w-full items-center'>
+      <HeaderTitle align='center'>통합 결과</HeaderTitle>
       <CloseButton onClick={() => router.push(closeTarget)} />
     </div>
   );
@@ -217,7 +218,7 @@ export function TotalResult() {
   return (
     <>
       <MobileLayout header={HeaderComponent}>
-        <div className='flex min-w-0 flex-col gap-4 pb-[150px] text-foreground'>
+        <div className='flex min-w-0 flex-col gap-4 pb-36 text-foreground'>
           {isLoading ? (
             <div className='py-10 text-center text-sm text-muted-foreground'>
               통합 결과를 불러오는 중...
@@ -431,7 +432,8 @@ export function TotalResult() {
         </div>
       </MobileLayout>
 
-      <div className='fixed bottom-0 left-1/2 z-50 w-full max-w-[390px] -translate-x-1/2 border-t border-white/10 bg-[#0F111A] px-[18px] pb-5 pt-3'>
+      {/* 뷰포트 기준 하단 고정 — 컨테이너 폭(w-full sm:max-w-97.5)에 맞춰 중앙정렬 */}
+      <div className='fixed bottom-0 left-1/2 z-50 w-full sm:max-w-97.5 -translate-x-1/2 border-t border-border bg-background px-4 pb-5 pt-3'>
         <div className='flex flex-col gap-2.5'>
           <Button
             type='button'

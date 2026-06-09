@@ -21,7 +21,7 @@ export const MobileLayout = ({
       <main className='flex-1 overflow-x-hidden px-4 py-4'>{children}</main>
 
       {bottomButton ? (
-        <div className='sticky bottom-0 z-50 flex h-[80px] shrink-0 items-center border-t border-border bg-background px-4'>
+        <div className='sticky bottom-0 z-50 flex min-h-20 shrink-0 items-center border-t border-border bg-background px-4 py-3'>
           {bottomButton}
         </div>
       ) : null}
