@@ -39,7 +39,7 @@ export function ConfirmDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className='bg-card border border-border ring-0 flex flex-col gap-2 py-4'>
-        <AlertDialogHeader className='mt-4'>
+        <AlertDialogHeader className='mt-4 place-items-start text-left'>
           <AlertDialogTitle className='whitespace-pre-line'>
             {options.title}
           </AlertDialogTitle>
