@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { startTermsAgreementLogin } from '@/lib/authNavigation';
 
 export const MainPage = () => {
   const router = useRouter();
@@ -24,11 +25,7 @@ export const MainPage = () => {
   const [roomCode, setRoomCode] = useState('');
 
   const handleOpenTerms = () => {
-    window.open(
-      '/terms',
-      'Terms Agreement',
-      'width=390,height=730,resizable=no,status=no,toolbar=no,menubar=no,location=no',
-    );
+    startTermsAgreementLogin(router.push);
   };
 
   const handleLogout = () => {
@@ -108,10 +105,10 @@ export const MainPage = () => {
         <Image
           src='/images/logo.webp'
           alt='감옥'
-          width={160}
-          height={64}
+          width={596}
+          height={302}
           priority
-          className='h-auto w-[160px]'
+          className="w-[160px] h-auto"
         />
 
         <p className='mt-7 text-[26px] font-bold leading-snug'>

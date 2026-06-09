@@ -11,7 +11,7 @@ function FormInput({
     <Input
       data-slot="form-input"
       className={cn(
-        'h-13 rounded-lg border-border bg-input px-4 text-sm text-foreground placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/30',
+        'h-13 rounded-lg border-border bg-input px-4 text-base md:text-sm text-foreground placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-ring/30',
         className,
       )}
       {...props}
