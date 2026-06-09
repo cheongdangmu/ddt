@@ -5,11 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ThumbsUp } from 'lucide-react';
 import { getResultApi } from '@/api/generated/result-api-결과-조회/result-api-결과-조회';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MobileLayout } from '@/components/layout/mobileLayout';
 import { HeaderTitle } from '@/components/layout/HeaderTitle';
+import { getProfileImageSrc } from '@/lib/profileImage';
 import { useAuth } from '@/hooks/useAuth';
 
 type ResultMember = {
@@ -195,6 +196,9 @@ export function SemiResult() {
                 <div className='overflow-hidden rounded-2xl border border-slate-800/70 bg-[#151926]'>
                   {rankedMembers.map((member) => {
                     const isMe = me?.role === 'user' && member.userId === me.id;
+                    const profileImageSrc = getProfileImageSrc(
+                      member.profileImage,
+                    );
 
                     return (
                       <div
@@ -211,6 +215,12 @@ export function SemiResult() {
                           )}
 
                           <Avatar className='h-9 w-9 border border-slate-700 bg-[#22293F]'>
+                            {profileImageSrc ? (
+                              <AvatarImage
+                                src={profileImageSrc}
+                                alt={`${member.nickname} 프로필 이미지`}
+                              />
+                            ) : null}
                             <AvatarFallback className='bg-transparent text-xs text-slate-300'>
                               {member.nickname.slice(0, 1)}
                             </AvatarFallback>

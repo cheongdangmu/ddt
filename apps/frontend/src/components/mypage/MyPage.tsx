@@ -229,12 +229,18 @@ export const MyPage = () => {
         {summaryCards.map((card) => (
           <div
             key={card.label}
-            className={`relative overflow-hidden rounded-[12px] px-3 py-4 ${card.className}`}
+            className={`relative flex flex-col overflow-hidden rounded-[12px] px-3 py-4 ${
+              card.icon ? '' : 'justify-center'
+            } ${card.className}`}
           >
-            <p className='text-center text-[11px] font-medium text-[#767481]'>
+            <p
+              className={`text-center text-[11px] font-medium text-[#767481] ${
+                card.icon ? 'mt-2' : ''
+              }`}
+            >
               {card.label}
             </p>
-            <p className='mt-1 text-center text-[18px] font-extrabold leading-7 text-white/90'>
+            <p className='mt-1 text-center text-[20px] font-extrabold leading-7 text-white/90'>
               {card.value}
             </p>
             {card.icon ? (

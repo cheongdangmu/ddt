@@ -222,7 +222,7 @@ export function TotalResult() {
         type='button'
         variant='outline'
         onClick={() => setIsContractDialogOpen(true)}
-        className='h-12 w-full rounded-[14px] border-primary text-base font-bold text-white'
+        className='h-12 w-full rounded-[14px] border-primary text-base font-bold text-muted-foreground'
       >
         계약서 보기
       </Button>

@@ -235,7 +235,7 @@ export const CreateRoom = () => {
             ) : (
               <BackButton onClick={onBack} />
             )}
-            <HeaderTitle>
+            <HeaderTitle align={step === 'complete' ? 'center' : 'left'}>
               {step === 'complete' ? '방 생성 완료 🎉' : '방 만들기'}
             </HeaderTitle>
           </>
