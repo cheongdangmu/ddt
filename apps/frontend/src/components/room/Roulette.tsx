@@ -15,6 +15,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
@@ -480,21 +482,21 @@ export function Roulette() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className='flex w-[calc(100%-32px)] max-w-[228px] flex-col items-start gap-4 overflow-hidden rounded-3xl border-0 bg-[var(--roulette-dialog)] p-4 text-center shadow-[0_0_10px_rgba(0,0,0,0.1)]'>
-          <section className='flex w-full flex-col items-start gap-3 py-3 text-left'>
-            <DialogTitle className='text-base font-semibold leading-[150%] text-foreground'>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
               룰렛 횟수가 아직 남았어요.
             </DialogTitle>
-            <DialogDescription className='text-xs font-medium leading-5 text-foreground/75'>
+            <DialogDescription>
               벌칙이 자동으로 결정돼요.
             </DialogDescription>
-          </section>
-          <div className='grid w-full grid-cols-2 items-center gap-3'>
+          </DialogHeader>
+          <DialogFooter>
             <Button
               type='button'
               variant='secondary'
               onClick={() => setIsDialogOpen(false)}
-              className='h-14 rounded-[14px] border border-[var(--roulette-dialog-secondary-border)] bg-[var(--roulette-dialog-secondary)] text-sm font-bold text-foreground/70'
+              className='flex-1 h-12 rounded-lg'
             >
               취소
             </Button>
@@ -502,11 +504,11 @@ export function Roulette() {
               type='button'
               onClick={handleExit}
               disabled={exitMutation.isPending}
-              className='h-14 rounded-[14px] bg-primary text-sm font-bold text-primary-foreground'
+              className='flex-1 h-12 rounded-lg font-bold'
             >
               {exitMutation.isPending ? '처리 중...' : '나가기'}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </MobileLayout>

@@ -18,6 +18,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -294,34 +295,35 @@ export default function Timer() {
               중도 포기
             </Button>
           </DialogTrigger>
-          <DialogContent className='max-w-[320px] rounded-2xl border border-border bg-[#1E2538] p-6 text-white shadow-2xl focus:outline-none'>
-            <DialogHeader className='text-left space-y-2'>
-              <DialogTitle className='text-base font-bold leading-snug tracking-tight text-white'>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
                 포기하면 남은 시간이
                 <br />
                 모두 이탈 시간으로 처리돼요.
               </DialogTitle>
-              <DialogDescription className='text-xs text-slate-400 font-medium leading-relaxed pt-0.5'>
+              <DialogDescription>
                 가장 많은 벌칙을 받게 됩니다.
               </DialogDescription>
             </DialogHeader>
-            <div className='flex gap-2.5 mt-6 w-full'>
+            <DialogFooter>
               <Button
                 type='button'
                 onClick={handleForfeit}
                 disabled={giveUpMutation.isPending}
-                className='flex-1 py-5 bg-destructive hover:bg-destructive/80 text-white font-bold rounded-xl transition-colors border-none'
+                className='flex-1 h-12 rounded-lg bg-destructive hover:bg-destructive/80 text-white font-bold border-none'
               >
                 {giveUpMutation.isPending ? '처리 중...' : '포기하기'}
               </Button>
               <Button
                 type='button'
+                variant='secondary'
                 onClick={() => setIsModalOpen(false)}
-                className='flex-1 py-5 bg-[#2A314A] hover:bg-[#353D5C] text-white font-bold rounded-xl transition-colors border-none'
+                className='flex-1 h-12 rounded-lg'
               >
                 취소
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       }

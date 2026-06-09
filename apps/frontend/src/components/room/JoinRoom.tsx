@@ -205,14 +205,14 @@ export const JoinRoom = () => {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant='outline'
-              className='flex-1 py-6! border border-white/20'
+              variant='secondary'
+              className='flex-1 h-12 rounded-lg'
               onClick={handleGuestStart}
             >
               게스트로 시작
             </Button>
             <Button
-              className='flex-1 py-6! font-bold'
+              className='flex-1 h-12 rounded-lg font-bold'
               onClick={handleGoogleLogin}
             >
               구글 로그인

@@ -281,14 +281,14 @@ export const MyPage = () => {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant='ghost'
-              className='flex-1 py-6! border border-white/20'
+              variant='secondary'
+              className='flex-1 h-12 rounded-lg'
               onClick={() => setIsLogoutConfirmOpen(false)}
             >
               아니요
             </Button>
             <Button
-              className='flex-1 py-6!'
+              className='flex-1 h-12 rounded-lg font-bold'
               onClick={async () => {
                 setIsLogoutConfirmOpen(false);
                 await executeLogout();

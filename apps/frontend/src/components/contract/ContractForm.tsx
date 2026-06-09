@@ -157,7 +157,7 @@ const ContractForm = () => {
   const handleLeaveRoom = async () => {
     const ok = await confirm({
       title: isHost
-        ? '방장이 나가면 방이 폭파됩니다. 정말 나가시겠어요?'
+        ? `방장이 나가면 방이 폭파됩니다.\n정말 나가시겠어요?`
         : '정말 방에서 나가시겠어요?',
       confirmText: '나가기',
       variant: 'destructive',

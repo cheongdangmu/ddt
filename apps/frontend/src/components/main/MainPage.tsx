@@ -155,8 +155,8 @@ export const MainPage = () => {
           />
           <DialogFooter>
             <Button
-              variant='ghost'
-              className='flex-1 py-6! border border-white/20'
+              variant='secondary'
+              className='flex-1 h-12 rounded-lg'
               onClick={() => setShowCodeDialog(false)}
             >
               취소
@@ -164,7 +164,7 @@ export const MainPage = () => {
             <Button
               disabled={!isCodeValid}
               onClick={handleEnterByCode}
-              className='flex-1 py-6!'
+              className='flex-1 h-12 rounded-lg font-bold'
             >
               입장하기
             </Button>

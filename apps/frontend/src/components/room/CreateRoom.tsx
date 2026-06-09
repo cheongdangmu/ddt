@@ -346,14 +346,14 @@ export const CreateRoom = () => {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant='outline'
-              className='flex-1 h-12 rounded-[14px] border-white/[0.18] text-white/80 bg-transparent hover:bg-white/5'
+              variant='secondary'
+              className='flex-1 h-12 rounded-lg'
               onClick={() => setShowExitDialog(false)}
             >
               취소
             </Button>
             <Button
-              className='flex-1 h-12 rounded-[14px] font-bold'
+              className='flex-1 h-12 rounded-lg font-bold'
               onClick={() => {
                 setShowExitDialog(false);
                 onBack?.();
