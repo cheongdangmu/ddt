@@ -1,5 +1,6 @@
 'use client';
 
+import type { Metadata } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
@@ -14,6 +15,11 @@ const notoSansKR = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
 });
+
+export const metadata: Metadata = {
+  title: '감옥 - 디지털 디톡스 타이머',
+  description: '남들이 딴짓할 때, 우리는 서로를 가두고 집중합니다. 가장 효율적인 디지털 디톡스 타이머.',
+};
 
 export default function RootLayout({
   children,
