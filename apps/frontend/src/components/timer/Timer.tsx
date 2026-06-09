@@ -135,9 +135,10 @@ export default function Timer() {
     onSuccess: () => {
       toast.info('중도 포기 처리되었습니다.');
       setIsModalOpen(false);
-      
+
       if (me?.role === 'guest') {
-        document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie =
+          'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         router.push(`/room/${room.code}/total-result`);
       } else {
         router.push(`/room/${room.code}/roulette?from=giveup`);
@@ -186,6 +187,14 @@ export default function Timer() {
   const focusDurationSec = (sessionInfo?.focusMin ?? 0) * 60;
   const breakDurationSec = (sessionInfo?.breakMin ?? 0) * 60;
 
+  const lastEscapeStartRef = useRef<number>(0);
+
+  const emitEscapeStart = useCallback(() => {
+    const now = Date.now();
+    if (now - lastEscapeStartRef.current < 300) return;
+    socket?.emit('escape:start');
+  }, [socket]);
+
   const syncEndedSessionRoute = useCallback(async () => {
     if (!sessionInfo || isCheckingRoomPhaseRef.current) return;
 
@@ -218,13 +227,13 @@ export default function Timer() {
 
     if (document.hidden) {
       if (isFocus) {
-        socket.emit('escape:start');
+        emitEscapeStart();
       } else {
         socket.emit('escape:end');
       }
     }
     isFocusRef.current = isFocus;
-  }, [isFocus, socket, sessionInfo]);
+  }, [isFocus, socket, sessionInfo, emitEscapeStart]);
 
   useEffect(() => {
     if (!socket || !sessionInfo) return;
@@ -232,7 +241,7 @@ export default function Timer() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         if (isFocusRef.current) {
-          socket.emit('escape:start');
+          emitEscapeStart();
           toast.error('화면을 이탈했습니다! 벌칙 시간이 누적됩니다.', {
             duration: 3000,
           });
@@ -244,7 +253,7 @@ export default function Timer() {
     };
     const handleBlur = () => {
       if (isFocusRef.current) {
-        socket.emit('escape:start');
+        emitEscapeStart();
       }
     };
 
@@ -261,7 +270,7 @@ export default function Timer() {
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [socket, sessionInfo, syncEndedSessionRoute]);
+  }, [socket, sessionInfo, syncEndedSessionRoute, emitEscapeStart]);
 
   if (!me) return null;
   if (!sessionInfo)

@@ -12,6 +12,7 @@ import { MobileLayout } from '@/components/layout/mobileLayout';
 import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { getProfileImageSrc } from '@/lib/profileImage';
 import { useAuth } from '@/hooks/useAuth';
+import { queryKeys } from '@/lib/queryKeys';
 
 type ResultMember = {
   memberId: string;
@@ -65,7 +66,7 @@ export function SemiResult() {
     isError,
     isLoading,
   } = useQuery({
-    queryKey: ['result', params.code],
+    queryKey: queryKeys.result.detail(params.code),
     queryFn: async () => {
       const res = await getResultApi().resultControllerGetResult(params.code);
       return res.data as ResultResponse;

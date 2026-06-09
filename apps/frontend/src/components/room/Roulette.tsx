@@ -26,6 +26,7 @@ import type {
   ResultResponseDto,
   SpinRouletteResponseDto,
 } from '@/api/generated/models';
+import { queryKeys } from '@/lib/queryKeys';
 import { CloseButton } from '../layout/CloseButton';
 
 const PenaltyRoulette = dynamic(
@@ -124,18 +125,21 @@ export function Roulette() {
     }
   }, [queryClient]);
 
-  const moveToFinishTarget = useCallback((replace = false) => {
-    if (finishTarget === '/') {
-      clearGuestSession();
-    }
+  const moveToFinishTarget = useCallback(
+    (replace = false) => {
+      if (finishTarget === '/') {
+        clearGuestSession();
+      }
 
-    if (replace) {
-      router.replace(finishTarget);
-      return;
-    }
+      if (replace) {
+        router.replace(finishTarget);
+        return;
+      }
 
-    router.push(finishTarget);
-  }, [clearGuestSession, finishTarget, router]);
+      router.push(finishTarget);
+    },
+    [clearGuestSession, finishTarget, router],
+  );
 
   const {
     data: result,
@@ -143,7 +147,7 @@ export function Roulette() {
     isError: isResultError,
     isLoading: isResultLoading,
   } = useQuery({
-    queryKey: ['result', params.code],
+    queryKey: queryKeys.result.detail(params.code),
     queryFn: async () => {
       const res = await getResultApi().resultControllerGetResult(params.code);
       return res.data as unknown as ResultResponseDto;
@@ -156,7 +160,7 @@ export function Roulette() {
     isError: isGiveUpResultError,
     isLoading: isGiveUpResultLoading,
   } = useQuery({
-    queryKey: ['give-up-roulette', params.code],
+    queryKey: queryKeys.result.giveUp(params.code),
     queryFn: async () => {
       const res = await getRouletteApi().rouletteControllerGetGiveUpResult(
         params.code,
