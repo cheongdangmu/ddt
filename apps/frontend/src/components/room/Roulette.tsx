@@ -379,17 +379,19 @@ export function Roulette() {
       header={
         <div className='relative flex w-full items-center justify-between text-foreground'>
           <span className='mx-auto text-lg font-medium'>벌칙 룰렛</span>
-          <button
+          <Button
             type='button'
+            variant='ghost'
+            size='icon'
             onClick={() =>
               !isSpinning && !isAllCompleted && setIsDialogOpen(true)
             }
             disabled={isSpinning || isAllCompleted}
-            className='absolute right-0 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground disabled:pointer-events-none disabled:opacity-40'
+            className='absolute right-0 rounded-full text-icon disabled:opacity-40'
             aria-label='룰렛 나가기'
           >
             <X className='h-5 w-5' />
-          </button>
+          </Button>
         </div>
       }
       bottomButton={

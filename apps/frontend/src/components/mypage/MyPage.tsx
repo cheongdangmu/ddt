@@ -220,7 +220,7 @@ export const MyPage = () => {
 
       <Link
         href='/room'
-        className='mb-4 flex h-[51px] w-full items-center justify-center rounded-[14px] border border-[#914CFF] bg-[#242136] text-[15px] font-bold text-white/90 transition hover:bg-[#2A2640]'
+        className='mb-4 flex h-[51px] w-full items-center justify-center rounded-[14px] border border-[#914CFF] bg-[#242136] text-[15px] font-bold text-white/90 transition hover:bg-[#2A2640] active:scale-[0.98]'
       >
         새로운 방 만들기
       </Link>

@@ -233,7 +233,7 @@ export const JoinRoom = () => {
             disabled={!isValid || joinMutation.isPending}
             onClick={handleSubmit}
             size='cta'
-            className='hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
+            className='disabled:bg-secondary disabled:text-muted-foreground'
           >
             {joinMutation.isPending ? '입장 중...' : '입장하기'}
           </Button>

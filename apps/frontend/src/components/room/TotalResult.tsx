@@ -209,10 +209,10 @@ export function TotalResult() {
   };
 
   const HeaderComponent = (
-    <div className='relative flex w-full items-center'>
+    <>
       <HeaderTitle align='center'>통합 결과</HeaderTitle>
       <CloseButton onClick={() => router.push(closeTarget)} />
-    </div>
+    </>
   );
 
   return (

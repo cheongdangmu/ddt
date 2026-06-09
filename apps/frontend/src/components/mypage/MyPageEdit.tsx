@@ -170,7 +170,7 @@ export function MyPageEdit() {
             onClick={handleSave}
             disabled={!isValid || isSaving || isLoading}
             size='cta'
-            className='hover:scale-[1.01] active:scale-[0.98] disabled:bg-[#1F2937] disabled:text-[#9CA3AF]'
+            className='disabled:bg-secondary disabled:text-muted-foreground'
           >
             {isSaving ? '저장 중...' : '저장하기'}
           </Button>

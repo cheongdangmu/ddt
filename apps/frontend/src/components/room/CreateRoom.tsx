@@ -244,7 +244,6 @@ export const CreateRoom = () => {
           step === 'complete' ? (
             <Button
               size='cta'
-              className='hover:scale-[1.01] active:scale-[0.98]'
               onClick={() => router.push(`/room/${roomCode}`)}
             >
               입장하기
@@ -254,7 +253,7 @@ export const CreateRoom = () => {
               disabled={!isValid || createRoomMutation.isPending}
               onClick={handleSubmit}
               size='cta'
-              className='hover:scale-[1.01] active:scale-[0.98] disabled:bg-secondary disabled:text-muted-foreground'
+              className='disabled:bg-secondary disabled:text-muted-foreground'
             >
               {createRoomMutation.isPending ? '생성 중...' : '방 만들기'}
             </Button>
