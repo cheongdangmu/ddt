@@ -31,6 +31,7 @@ export default function MemberSignList() {
 
   const isHost = me.id === hostId;
   const myMember = members[me.id];
+  const myNickname = myMember?.nickname ?? me.nickname ?? '내';
   const myProfileImage = myMember?.profileImage ?? me.profileImage;
   const isMeSigned = myMember?.isSigned ?? false;
   const memberList = Object.entries(members);
