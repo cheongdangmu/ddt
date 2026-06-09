@@ -42,11 +42,12 @@ export function ConfirmDialog({
         <AlertDialogHeader className='mt-4'>
           <AlertDialogTitle>{options.title}</AlertDialogTitle>
         </AlertDialogHeader>
-        {options.description && (
-          <AlertDialogDescription className='text-xs'>
-            {options.description}
-          </AlertDialogDescription>
-        )}
+        <AlertDialogDescription
+          className={cn(!options.description && 'sr-only', 'text-xs')}
+        >
+          {options.description ??
+            '선택한 작업을 진행하거나 취소할 수 있는 확인 창입니다.'}
+        </AlertDialogDescription>
         <div className='w-full flex gap-3 mt-4'>
           <AlertDialogCancel onClick={onCancel} className='flex-1 py-6'>
             {options.cancelText ?? '취소'}

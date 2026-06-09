@@ -182,7 +182,11 @@ export default function MemberSignList() {
                         />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant='ghost' size='icon'>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              aria-label={`${m.nickname} 멤버 옵션`}
+                            >
                               <EllipsisVertical />
                             </Button>
                           </DropdownMenuTrigger>
