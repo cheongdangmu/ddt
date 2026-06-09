@@ -96,7 +96,7 @@ export const MainPage = () => {
           width={160}
           height={64}
           priority
-          className='h-auto w-[160px]'
+          style={{ width: '160px', height: 'auto' }}
         />
 
         <p className='mt-7 text-[26px] font-bold leading-snug'>
