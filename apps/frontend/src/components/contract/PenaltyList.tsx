@@ -44,10 +44,11 @@ interface PenaltyInputProps extends Omit<
 }
 
 const PenaltyInput = forwardRef<HTMLInputElement, PenaltyInputProps>(
-  ({ content, onUpdate, onFocus, onBlur, ...props }, ref) => {
+  ({ content, onUpdate, onFocus, onBlur, placeholder, ...props }, ref) => {
     const [draft, setDraft] = useState(content ?? '');
     const isEditingRef = useRef(false);
     const isComposingRef = useRef(false);
+    const [isFocused, setIsFocused] = useState(false);
 
     // 편집 중이 아닐 때만 외부 Yjs 값 반영 (다른 유저 업데이트)
     useEffect(() => {
@@ -61,7 +62,12 @@ const PenaltyInput = forwardRef<HTMLInputElement, PenaltyInputProps>(
         ref={ref}
         maxLength={50}
         value={draft}
+        placeholder={isFocused ? '' : placeholder}
+        autoComplete='off'
+        autoCorrect='off'
+        spellCheck={false}
         onFocus={(e) => {
+          setIsFocused(true);
           isEditingRef.current = true;
           onFocus?.(e);
         }}
@@ -82,6 +88,7 @@ const PenaltyInput = forwardRef<HTMLInputElement, PenaltyInputProps>(
           }
         }}
         onBlur={(e) => {
+          setIsFocused(false);
           isEditingRef.current = false;
           onUpdate(draft); // blur 시 최종 값 Yjs 동기화
           onBlur?.(e);
