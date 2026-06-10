@@ -159,6 +159,7 @@ export function Roulette() {
     data: giveUpResult,
     isError: isGiveUpResultError,
     isLoading: isGiveUpResultLoading,
+    dataUpdatedAt: giveUpDataUpdatedAt,
   } = useQuery({
     queryKey: queryKeys.result.giveUp(params.code),
     queryFn: async () => {
@@ -318,6 +319,16 @@ export function Roulette() {
 
   // 10분 제한 시간 경과(서버시간 보정 기준)
   const isExpired = !isGiveUpRoulette && !!result && remainingSeconds <= 0;
+  // 중도포기 룰렛 제한 시간 경과
+  const giveUpRemainingSeconds = giveUpResult
+    ? getRemainingSeconds(
+        giveUpResult.serverTime,
+        giveUpResult.rouletteEndsAt,
+        giveUpDataUpdatedAt,
+        now,
+      )
+    : 0;
+  const isGiveUpExpired = isGiveUpRoulette && !!giveUpResult && giveUpRemainingSeconds <= 0;
   // 자동추첨까지 끝났거나(전부 공개), 타임아웃인데 뽑을 게 없으면 완료
   const isCompleted = isAllCompleted || (isExpired && remainingChances <= 0);
   // 휠 정지까지 끝난 진짜 완료 (연출 중 버튼/문구 깜빡임 방지)
@@ -451,6 +462,48 @@ export function Roulette() {
     isSpinning,
     spinMutation.isPending,
     handleStartSpinning,
+  ]);
+
+  // 페이지 진입 시 뽑을 룰렛이 없는 경우(시간 만료+잔여 횟수 없음 OR 아이템 목록 없음) total-result로 이동
+  useEffect(() => {
+    if (isGiveUpRoulette) return;
+    if (isResultLoading || !result) return;
+    const shouldSkip =
+      (isExpired && remainingChances <= 0) || !hasRouletteItems;
+    if (shouldSkip && !isSpinning && history.length === 0) {
+      moveToFinishTarget(true);
+    }
+  }, [
+    isGiveUpRoulette,
+    isResultLoading,
+    result,
+    isExpired,
+    remainingChances,
+    hasRouletteItems,
+    isSpinning,
+    history.length,
+    moveToFinishTarget,
+  ]);
+
+  // 중도포기 룰렛: 진입 시 또는 진행 중 만료 시 메인으로 이동
+  const giveUpExpiredToastShownRef = useRef(false);
+  useEffect(() => {
+    if (!isGiveUpRoulette) return;
+    if (isGiveUpResultLoading || !giveUpResult) return;
+    if (!isGiveUpExpired) {
+      giveUpExpiredToastShownRef.current = false;
+      return;
+    }
+    if (giveUpExpiredToastShownRef.current) return;
+    giveUpExpiredToastShownRef.current = true;
+    toast.error('시간이 초과되어 벌칙이 자동으로 결정됩니다.');
+    moveToFinishTarget(true);
+  }, [
+    isGiveUpRoulette,
+    isGiveUpResultLoading,
+    giveUpResult,
+    isGiveUpExpired,
+    moveToFinishTarget,
   ]);
 
   const handleExit = () => {
