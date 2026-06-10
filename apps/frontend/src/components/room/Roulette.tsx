@@ -165,6 +165,7 @@ export function Roulette() {
       const res = await getRouletteApi().rouletteControllerGetGiveUpResult(
         params.code,
       );
+      console.log(res.data);
       return res.data as unknown as GiveUpRouletteResponseDto;
     },
     enabled: isGiveUpRoulette,
