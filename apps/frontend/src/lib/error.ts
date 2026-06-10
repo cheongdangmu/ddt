@@ -15,3 +15,8 @@ export function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message) return err.message;
   return fallback;
 }
+
+/** Axios 에러의 HTTP 상태 코드를 추출한다. (Axios 에러가 아니면 undefined) */
+export function getErrorStatus(err: unknown): number | undefined {
+  return axios.isAxiosError(err) ? err.response?.status : undefined;
+}
