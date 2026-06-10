@@ -20,10 +20,8 @@ import { startTermsAgreementLogin } from '@/lib/authNavigation';
 import { useActiveRoom, getActiveRoomPath } from '@/hooks/useActiveRoom';
 import { cn } from '@/lib/utils';
 
-// 방 정원(입장 가능 최대 인원). 백엔드 join 제한과 동일하게 유지한다.
 const MAX_ROOM_MEMBERS = 10;
 
-// phase별 방 상태 명칭. (활성 방은 lobby/contract/timer만 내려온다)
 const PHASE_LABEL: Record<string, string> = {
   lobby: '입장 전',
   contract: '계약서 작성 중',
