@@ -21,13 +21,11 @@ import { useEffect } from 'react';
 
 // ── 모듈 레벨 상태 ──────────────────────────────────────────────────────────
 let blockActive = false;
-let isForwarding = false;
 let guardPath = '';
 let savedNJTree: unknown = undefined;
-let forwardTimer: ReturnType<typeof setTimeout> | null = null;
 
 function buildGuardState() {
-  const state: Record<string, unknown> = { __NA: true };
+  const state: Record<string, unknown> = { __NA: true, ddtGuard: true };
   if (savedNJTree !== undefined) {
     state.__PRIVATE_NEXTJS_INTERNALS_TREE = savedNJTree;
   }
@@ -41,42 +39,29 @@ function pushGuard() {
   window.history.pushState(buildGuardState(), '', guardPath);
 }
 
-function handlePopState() {
+function handlePopState(event: PopStateEvent) {
   if (!blockActive) return;
 
-  if (isForwarding) {
-    // history.go(1)로 인한 앞으로가기 → 새 가드 항목 복원 후 종료
-    isForwarding = false;
-    if (forwardTimer !== null) {
-      clearTimeout(forwardTimer);
-      forwardTimer = null;
-    }
-    pushGuard();
+  const state = event.state as Record<string, unknown> | null;
+  if (state && state.ddtGuard) {
+    // history.go(1)로 복원된 가드 상태
+    event.stopImmediatePropagation();
     return;
   }
 
-  // 뒤로가기 감지 → 즉시 앞으로 이동으로 원상 복구
-  isForwarding = true;
+  // 뒤로가기 감지 → 즉시 이벤트 전파 차단 및 앞으로 복구
+  event.stopImmediatePropagation();
   window.history.go(1);
-
-  // go(1) 실패 안전망: 전방 항목이 없을 때 pushGuard로 직접 복원
-  forwardTimer = setTimeout(() => {
-    if (isForwarding) {
-      isForwarding = false;
-      forwardTimer = null;
-      pushGuard();
-    }
-  }, 200);
 }
 
-// ── 모듈 로드 시 한 번만 등록 (HMR 재등록 대비 이전 리스너 제거) ──────────
+// ── 모듈 로드 시 한 번만 등록 (HMR 재등록 대비 이전 리스너 제거, 캡처 단계 사용) ──
 if (typeof window !== 'undefined') {
   const w = window as Window & { __ddt_blockBackListener?: typeof handlePopState };
   if (w.__ddt_blockBackListener) {
-    window.removeEventListener('popstate', w.__ddt_blockBackListener);
+    window.removeEventListener('popstate', w.__ddt_blockBackListener, true);
   }
   w.__ddt_blockBackListener = handlePopState;
-  window.addEventListener('popstate', handlePopState);
+  window.addEventListener('popstate', handlePopState, true);
 }
 
 // ── Hook: 페이지별 차단 활성화/비활성화 ──────────────────────────────────────
@@ -94,15 +79,9 @@ export function useBlockBrowserBack() {
     pushGuard();
 
     blockActive = true;
-    isForwarding = false;
 
     return () => {
       blockActive = false;
-      isForwarding = false;
-      if (forwardTimer !== null) {
-        clearTimeout(forwardTimer);
-        forwardTimer = null;
-      }
       // guardPath, savedNJTree는 다음 페이지의 useEffect에서 덮어씀
     };
   }, []);
