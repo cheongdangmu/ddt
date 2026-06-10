@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Users, Lightbulb } from 'lucide-react';
@@ -15,7 +15,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useConfirm } from '@/hooks/useConfirm';
 import { getRoomApi } from '@/api/generated/room-api/room-api';
 import { useMutation } from '@tanstack/react-query';
-import { getErrorMessage, getErrorStatus } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error';
 import { isMobileOrTablet } from '@/lib/device';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveRoom, getActiveRoomPath } from '@/hooks/useActiveRoom';
@@ -140,20 +140,7 @@ export const CreateRoom = () => {
       sessionStorage.setItem(`hostPassword:${data.code}`, password);
       setStep('complete');
     },
-    onError: async (err) => {
-      // 이미 진행 중인 방이 있어 생성이 막힌 경우(409) → 토스트 대신 복귀 모달
-      if (getErrorStatus(err) === 409 && activeRoom) {
-        const ok = await confirm({
-          title: '이미 진행 중인 방이 있습니다',
-          description: `[${activeRoom.title}] 방으로 복귀하시겠습니까?`,
-          confirmText: '방 복귀하기',
-          cancelText: '취소',
-        });
-        if (ok) {
-          router.push(getActiveRoomPath(activeRoom));
-        }
-        return;
-      }
+    onError: (err) => {
       toast.error(getErrorMessage(err, '방 생성 실패'));
     },
   });
@@ -174,6 +161,25 @@ export const CreateRoom = () => {
       onBack();
     },
   });
+
+  // 방 만들기 화면 진입 시 이미 진행 중인 방이 있으면 복귀/홈으로 유도 모달을 띄운다.
+  // (참여 중인 방이 있으면 새 방 생성 화면에 머무를 수 없게 함)
+  const activeRoomPromptedRef = useRef(false);
+  useEffect(() => {
+    if (!activeRoom || activeRoomPromptedRef.current) {
+      return;
+    }
+    activeRoomPromptedRef.current = true;
+    void (async () => {
+      const ok = await confirm({
+        title: '이미 진행 중인 방이 있습니다',
+        description: `[${activeRoom.title}] 방으로 복귀하시겠습니까?`,
+        confirmText: '방 복귀하기',
+        cancelText: '홈으로',
+      });
+      router.push(ok ? getActiveRoomPath(activeRoom) : '/');
+    })();
+  }, [activeRoom, confirm, router]);
 
   // 생성완료 화면에서 나가기(X) → 폭파 확인 다이얼로그 → 확인 시 방 폭파
   const handleExit = async () => {
