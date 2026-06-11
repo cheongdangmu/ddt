@@ -4,9 +4,26 @@ import { ConfigService } from '@nestjs/config';
 import type { PushSubscription } from 'web-push';
 import { TimerRepository } from './timer.repository';
 import { RedisService } from '../../common/redis/redis.service';
+import { OnEvent } from '@nestjs/event-emitter';
 
 const PUSH_SUB_TTL_SEC = 11 * 60 * 60;
 const PUSH_COOLDOWN_SEC = 10;
+
+interface WebPushError {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: string;
+  message?: string;
+}
+
+function isWebPushError(err: unknown): err is WebPushError {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'statusCode' in err &&
+    typeof (err as Record<string, unknown>).statusCode === 'number'
+  );
+}
 
 @Injectable()
 export class PushNotificationService {
@@ -99,29 +116,49 @@ export class PushNotificationService {
       roomCode,
       userId,
     );
-    this.logger.log(`[Push] 개별 구독 조회 (user=${userId}, found=${!!subRaw})`);
+    this.logger.log(
+      `[Push] 개별 구독 조회 (user=${userId}, found=${!!subRaw})`,
+    );
     if (!subRaw) return;
 
     try {
       const subscription = JSON.parse(subRaw) as PushSubscription;
       const payload = JSON.stringify({ title, body });
-      
-      await webpush.sendNotification(subscription, payload);
-      
-      await this.redisService.instance.set(cooldownKey, '1', 'EX', PUSH_COOLDOWN_SEC);
-      
-    } catch (err: any) {
-      const statusCode = err?.statusCode || 'Unknown';
-      const responseBody = err?.body || '';
-      const msg = err instanceof Error ? err.message : String(err);
-      
-      this.logger.warn(
-        `개별 푸시 전송 실패 (${userId}) [Status: ${statusCode}]: ${responseBody} - ${msg}`
-      );
 
-      if (statusCode === 404 || statusCode === 410) {
-        await this.redisService.instance.del(`push_sub:${roomCode}:${userId}`);
+      await webpush.sendNotification(subscription, payload);
+
+      await this.redisService.instance.set(
+        cooldownKey,
+        '1',
+        'EX',
+        PUSH_COOLDOWN_SEC,
+      );
+    } catch (err: unknown) {
+      if (isWebPushError(err)) {
+        this.logger.warn(
+          `개별 푸시 전송 실패 (${userId}) [Status: ${err.statusCode}]: ${err.body}`,
+        );
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await this.redisService.instance.del(
+            `push_sub:${roomCode}:${userId}`,
+          );
+        }
+      } else {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`개별 푸시 전송 실패 (${userId}): ${msg}`);
       }
     }
+  }
+  @OnEvent('escape.started')
+  async handleEscapeStarted(payload: { roomCode: string; userId: string }) {
+    await this.sendToUser(
+      payload.roomCode,
+      payload.userId,
+      '🚨 화면 이탈 감지!',
+      '집중 화면을 벗어났습니다. 이탈 시간이 누적되고 있어요!',
+    ).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`이탈 푸시 에러: ${msg}`);
+    });
   }
 }

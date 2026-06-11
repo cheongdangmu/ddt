@@ -16,7 +16,7 @@ import { PushNotificationService } from './push-notification.service';
     forwardRef(() => RoomModule),
     PenaltyModule,
     BullModule.registerQueue({ name: SESSION_QUEUE }),
-    forwardRef(() => EscapeModule),
+    EscapeModule,
   ],
   controllers: [TimerController],
   providers: [
