@@ -99,8 +99,7 @@ export default function Timer() {
     async function subscribeToPush() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       try {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (Notification.permission !== 'granted') return;
 
         const registration = await navigator.serviceWorker.ready;
         let subscription = await registration.pushManager.getSubscription();
@@ -228,7 +227,7 @@ export default function Timer() {
 
   useEffect(() => {
     if (phaseRemainingSec > 0) return;
-    
+
     void syncEndedSessionRoute();
 
     const intervalId = setInterval(() => {
