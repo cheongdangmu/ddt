@@ -438,6 +438,8 @@ export class TimerService implements OnModuleInit {
         delay: totalMs,
         removeOnComplete: true,
         removeOnFail: 100,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
       },
     );
     this.logger.log(
@@ -455,6 +457,8 @@ export class TimerService implements OnModuleInit {
           delay: notifyTimeMs,
           removeOnComplete: true,
           removeOnFail: 100,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 1000 },
         },
       );
 
@@ -467,6 +471,8 @@ export class TimerService implements OnModuleInit {
           delay: breakStartMs,
           removeOnComplete: true,
           removeOnFail: 100,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 1000 },
         },
       );
 
