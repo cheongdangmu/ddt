@@ -12,12 +12,11 @@ import { TimerRepository } from './timer.repository';
 import { PushNotificationService } from './push-notification.service';
 @Module({
   imports: [
-    GatewayModule,
-    RoomModule,
+    forwardRef(() => GatewayModule),
+    forwardRef(() => RoomModule),
     PenaltyModule,
     BullModule.registerQueue({ name: SESSION_QUEUE }),
     forwardRef(() => EscapeModule),
-    EscapeModule,
   ],
   controllers: [TimerController],
   providers: [
