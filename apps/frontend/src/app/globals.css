@@ -239,15 +239,6 @@
   }
 }
 
-@keyframes marqueeScroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 /* '취조실 조명'(Spotlight) 오버레이 페이드인: 수동 룰렛 완료 시 0.2초 동안 opacity 0 → 1 */
 @keyframes spotlightIn {
   from {
