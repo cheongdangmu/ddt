@@ -299,7 +299,7 @@ export function Roulette() {
         err.response?.status === 400 &&
         message?.includes('이미 완료')
       ) {
-        moveToFinishTarget(true);
+        moveToFinishTarget();
         return;
       }
 
