@@ -16,7 +16,12 @@ export class EscapeService {
   ) {}
 
   async updateHeartbeat(roomCode: string, identifier: string) {
-    await this.redis.instance.set(`heartbeat:${roomCode}:${identifier}`, Date.now().toString(), 'EX', 15);
+    await this.redis.instance.set(
+      `heartbeat:${roomCode}:${identifier}`,
+      Date.now().toString(),
+      'EX',
+      15,
+    );
   }
 
   async clearHeartbeat(roomCode: string, identifier: string) {
@@ -24,12 +29,17 @@ export class EscapeService {
   }
 
   async logEscapeStart(roomCode: string, identifier: string) {
-    const room = await this.prisma.room.findUnique({ where: { code: roomCode } });
+    const room = await this.prisma.room.findUnique({
+      where: { code: roomCode },
+    });
     if (!room || room.phase !== 'timer') return;
 
     const isGuest = identifier.startsWith('guest_');
     const member = await this.prisma.roomMember.findFirst({
-      where: { roomCode, ...(isGuest ? { guestToken: identifier } : { userId: identifier }) },
+      where: {
+        roomCode,
+        ...(isGuest ? { guestToken: identifier } : { userId: identifier }),
+      },
     });
 
     if (!member || member.gaveUpAt) return;
@@ -54,7 +64,10 @@ export class EscapeService {
   async logEscapeEnd(roomCode: string, identifier: string) {
     const isGuest = identifier.startsWith('guest_');
     const member = await this.prisma.roomMember.findFirst({
-      where: { roomCode, ...(isGuest ? { guestToken: identifier } : { userId: identifier }) },
+      where: {
+        roomCode,
+        ...(isGuest ? { guestToken: identifier } : { userId: identifier }),
+      },
     });
 
     if (!member || member.gaveUpAt) return;
@@ -78,7 +91,9 @@ export class EscapeService {
       where: { code: roomCode },
       include: {
         template: true,
-        roomMembers: { include: { escapeLogs: { where: { deletedAt: null } } } },
+        roomMembers: {
+          include: { escapeLogs: { where: { deletedAt: null } } },
+        },
       },
     });
     if (!room?.template || !room.startedAt) return [];
@@ -97,7 +112,14 @@ export class EscapeService {
       let totalEscapeMs = 0;
 
       for (const { start, end } of merged) {
-        totalEscapeMs += getEffectiveFocusEscapeMs(start, end, sessionStartMs, focusMin, breakMin, rounds);
+        totalEscapeMs += getEffectiveFocusEscapeMs(
+          start,
+          end,
+          sessionStartMs,
+          focusMin,
+          breakMin,
+          rounds,
+        );
       }
       return { identifier: member.userId ?? member.guestToken, totalEscapeMs };
     });

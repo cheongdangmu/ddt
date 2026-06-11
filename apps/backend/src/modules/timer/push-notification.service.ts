@@ -55,7 +55,9 @@ export class PushNotificationService {
     data: string | PushSubscription,
     platform: string,
   ): Promise<void> {
-    this.logger.log(`[Push] 구독 저장 (room=${roomCode}, user=${userId}, platform=${platform})`);
+    this.logger.log(
+      `[Push] 구독 저장 (room=${roomCode}, user=${userId}, platform=${platform})`,
+    );
 
     let endpointArn: string | null = null;
     if (platform === 'android' && typeof data === 'string') {
@@ -67,7 +69,12 @@ export class PushNotificationService {
       data: platform === 'android' ? endpointArn : data,
     });
 
-    await this.timerRepository.savePushSubscription(roomCode, userId, payload, PUSH_SUB_TTL_SEC);
+    await this.timerRepository.savePushSubscription(
+      roomCode,
+      userId,
+      payload,
+      PUSH_SUB_TTL_SEC,
+    );
   }
 
   async sendToRoom(
