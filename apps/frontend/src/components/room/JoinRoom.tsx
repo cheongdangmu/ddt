@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { MobileLayout } from '@/components/layout/mobileLayout';
-import { RoomNotFound } from '@/components/room/RoomNotFound';
+import Loading from '@/components/ui/loading';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Label } from '@/components/ui/label';
@@ -88,11 +88,79 @@ export const JoinRoom = () => {
     retry: false,
   });
 
+  // 내 활성 방으로 "이 방이 곧 내가 참여 중인 방인지" 판단한다. (timer 멤버는 재접속 허용)
+  const { data: myActiveRoom, isFetched: isMyActiveFetched } = useQuery({
+    queryKey: queryKeys.room.active(isLoggedIn, true),
+    queryFn: async () => {
+      const res = await getRoomApi().roomControllerGetMyActiveRoom();
+      return (
+        (res as unknown as { data: { code: string; phase: string } | null })
+          .data ?? null
+      );
+    },
+    enabled: isLoggedIn,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
+
   const isHost = room?.isHost ?? false;
 
   const isValid =
     nickname.trim().length > 0 &&
     (isHost || (password.length >= 4 && password.length <= 20));
+
+  // 진행 중(timer)/종료(result) 방 진입 처리. (백엔드 join 에러 메시지에 맞춤)
+  // - timer: 참여 중인 멤버는 타이머로, 비멤버는 경고 후 메인으로
+  // - result: 멤버 구분 불가(getMyActiveRoom 제외) → 모두 경고 후 메인으로
+  const enteredHandledRef = useRef(false);
+  useEffect(() => {
+    if (enteredHandledRef.current) {
+      return;
+    }
+
+    // closed / 존재하지 않는 방: find가 404를 던진다 → 종료 안내 후 메인으로.
+    // (백엔드가 closed와 없는 방을 같은 404로 던져 프론트에서 구분 불가 → 둘을 아우르는 문구 사용)
+    if (isRoomInvalid) {
+      enteredHandledRef.current = true;
+      toast.error('존재하지 않거나 종료된 방이에요.');
+      router.replace('/');
+      return;
+    }
+
+    if (!room) {
+      return;
+    }
+
+    if (room.phase === 'result') {
+      enteredHandledRef.current = true;
+      toast.error('종료된 방입니다.');
+      router.replace('/');
+      return;
+    }
+
+    if (room.phase === 'timer') {
+      // 로그인 유저는 활성 방 조회가 끝나야 멤버 여부를 알 수 있어 대기한다.
+      if (isLoggedIn && !isMyActiveFetched) {
+        return;
+      }
+      enteredHandledRef.current = true;
+      if (isLoggedIn && myActiveRoom?.code === code) {
+        router.replace(`/room/${code}/timer`);
+      } else {
+        toast.error('이미 집중 세션이 시작된 방입니다.');
+        router.replace('/');
+      }
+    }
+  }, [
+    isRoomInvalid,
+    room,
+    isLoggedIn,
+    myActiveRoom,
+    isMyActiveFetched,
+    code,
+    router,
+  ]);
 
   const handleGoogleLogin = () => {
     startTermsAgreementLogin(router.push);
@@ -140,25 +208,14 @@ export const JoinRoom = () => {
     });
   };
 
-  if (isRoomLoading) {
-    return (
-      <MobileLayout
-        header={
-          <>
-            <BackButton />
-            <HeaderTitle>방 입장하기</HeaderTitle>
-          </>
-        }
-      >
-        <div className='pt-16 text-center text-sm text-white/50'>
-          방 정보를 불러오는 중...
-        </div>
-      </MobileLayout>
-    );
-  }
-
-  if (isRoomInvalid) {
-    return <RoomNotFound />;
+  // 로딩 중이거나 timer/result/closed·없는 방(위 effect가 리다이렉트 처리)이면 폼 대신 공통 로딩 UI를 보여준다.
+  if (
+    isRoomLoading ||
+    isRoomInvalid ||
+    room?.phase === 'timer' ||
+    room?.phase === 'result'
+  ) {
+    return <Loading label='방 정보를 불러오는 중...' />;
   }
 
   return (
