@@ -19,11 +19,7 @@ import { TimerRepository } from './timer.repository';
     forwardRef(() => EscapeModule),
   ],
   controllers: [TimerController],
-  providers: [
-    TimerService,
-    SessionProcessor,
-    TimerRepository,
-  ],
+  providers: [TimerService, SessionProcessor, TimerRepository],
   exports: [TimerService],
 })
 export class TimerModule {}

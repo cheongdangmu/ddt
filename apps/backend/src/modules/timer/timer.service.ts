@@ -116,7 +116,9 @@ export class TimerService implements OnModuleInit {
       return;
     }
 
-    const subRaw = await this.redisService.instance.get(`push_sub:${roomCode}:${userId}`);
+    const subRaw = await this.redisService.instance.get(
+      `push_sub:${roomCode}:${userId}`,
+    );
     if (!subRaw) return;
 
     const subData = JSON.parse(subRaw) as SavedPushSub;
@@ -125,18 +127,32 @@ export class TimerService implements OnModuleInit {
       if (subData.platform === 'web' && this.pushEnabled) {
         await webpush.sendNotification(
           subData.data as PushSubscription,
-          JSON.stringify({ title, body })
+          JSON.stringify({ title, body }),
         );
-      } else if (subData.platform === 'android' && typeof subData.data === 'string') {
+      } else if (
+        subData.platform === 'android' &&
+        typeof subData.data === 'string'
+      ) {
         await this.snsService.sendPushNotification(subData.data, title, body);
         this.logger.log(`[Push] Android 개별 푸시 발송 성공 (user=${userId})`);
       }
 
-      await this.redisService.instance.set(cooldownKey, '1', 'EX', 10); // 10초 쿨타임
-    } catch (err: any) {
-      const statusCode = err?.statusCode || 'Unknown';
+      await this.redisService.instance.set(
+        cooldownKey,
+        '1',
+        'EX',
+        PUSH_COOLDOWN_SEC,
+      );
+    } catch (err: unknown) {
+      const statusCode =
+        typeof err === 'object' && err !== null && 'statusCode' in err
+          ? (err as Record<string, unknown>).statusCode
+          : 'Unknown';
+
       const msg = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`개별 푸시 전송 실패 (${userId}) [Status: ${statusCode}]: ${msg}`);
+      this.logger.warn(
+        `개별 푸시 전송 실패 (${userId}) [Status: ${String(statusCode)}]: ${msg}`,
+      );
 
       if (statusCode === 404 || statusCode === 410) {
         await this.redisService.instance.del(`push_sub:${roomCode}:${userId}`);
@@ -469,7 +485,6 @@ export class TimerService implements OnModuleInit {
       }
     }
   }
-
 
   async sendBreakWarning(roomCode: string): Promise<void> {
     // 💡 새로운 통합 알림 메서드 사용
