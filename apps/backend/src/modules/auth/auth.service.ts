@@ -35,6 +35,7 @@ interface GoogleProfile {
 interface JwtPayload {
   sub: string;
   exp: number;
+  jti: string;
 }
 
 interface AgreeTermsDto {
@@ -86,6 +87,7 @@ export class AuthService {
       email: user.email,
       role: 'user',
       isTermsAgreed: user.isTermsAgreed,
+      jti: uuidv4(),
     };
     return this.jwtService.sign(payload);
   }
@@ -142,10 +144,11 @@ export class AuthService {
 
       const exp = (decoded as JwtPayload).exp;
       const expirationTime = exp - Math.floor(Date.now() / 1000);
+      const jti = (decoded as JwtPayload).jti;
 
       if (expirationTime > 0) {
         await this.redisService.instance.set(
-          `blacklist:${token}`,
+          `blacklist:${jti}`,
           'logout',
           'EX',
           expirationTime,
