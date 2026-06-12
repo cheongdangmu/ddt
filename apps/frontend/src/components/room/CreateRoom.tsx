@@ -57,11 +57,11 @@ function CreateRoomComplete({
         <div className='flex gap-4'>
           <div className='flex-1 flex flex-col gap-1'>
             <span className='text-xs text-[#6B7280]'>방 이름</span>
-            <span className='text-sm font-semibold text-white'>{roomName}</span>
+            <span className='text-xl font-semibold text-white'>{roomName}</span>
           </div>
           <div className='flex flex-col gap-1'>
             <span className='text-xs text-[#6B7280]'>최대 인원</span>
-            <span className='text-sm font-semibold text-white'>10명</span>
+            <span className='text-xl font-semibold text-white'>10명</span>
           </div>
         </div>
 
@@ -140,11 +140,7 @@ function CreateRoomComplete({
       </div>
 
       {/* 복사 버튼 */}
-      <Button
-        variant='outline'
-        onClick={onCopyAll}
-        className='w-full h-auto py-3 rounded-[16px] border border-ring text-sm text-white/80 hover:bg-white/5'
-      >
+      <Button variant='outline' onClick={onCopyAll} size='main'>
         초대 정보 공유
       </Button>
     </div>
@@ -364,7 +360,7 @@ export const CreateRoom = () => {
             </p>
 
             <div className='flex justify-center mb-8'>
-              <div className='inline-flex items-center gap-2.5 bg-card border border-border rounded-lg px-4 py-3.5 text-sm text-muted-foreground'>
+              <div className='inline-flex items-center gap-2.5 bg-card rounded-lg px-4 py-3 text-sm text-muted-foreground'>
                 <Users size={18} className='text-[#6B7280] shrink-0' />
                 최대 10명까지 입장 가능합니다.
               </div>
