@@ -158,7 +158,7 @@ export default function PenaltyList({ yjs }: PenaltyListProps) {
                     fieldOwners={fieldOwners}
                   />
                   <div className='flex gap-2 items-center'>
-                    <div className='w-full h-fit relative'>
+                    <div className='flex items-center gap-1'>
                       <PenaltyInput
                         ref={i === penalties.length - 1 ? lastInputRef : null}
                         content={p.content}
@@ -167,7 +167,7 @@ export default function PenaltyList({ yjs }: PenaltyListProps) {
                           CONTRACT_INPUT_FOCUS,
                           fieldOwners[penaltyKey] &&
                             'outline-2 outline-offset-1',
-                          'bg-background! h-12 z-0 pr-4.5',
+                          'bg-background! h-12 z-0 flex-1 min-w-0',
                         )}
                         style={{
                           outlineColor: fieldOwners[penaltyKey]?.color,
@@ -189,7 +189,7 @@ export default function PenaltyList({ yjs }: PenaltyListProps) {
                           size='icon'
                           aria-label={`${i + 1}번째 벌칙 삭제`}
                           onClick={() => removePenalty(i)}
-                          className='w-10 h-10 bg-none absolute top-1 right-1 hover:bg-none!'
+                          className='shrink-0 w-10 h-10'
                         >
                           <X />
                         </Button>
