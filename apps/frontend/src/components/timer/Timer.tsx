@@ -115,15 +115,18 @@ export default function Timer() {
           });
         }
 
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/rooms/${room.code}/push-subscription`,
-          subscription,
-          {
-            headers: {
-              Authorization: `Bearer ${document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1]}`,
-            },
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/rooms/${room.code}/push-subscription`,
+        {
+          subscription: subscription,
+          platform: 'web'
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1]}`,
           },
-        );
+        },
+      );
       } catch (error) {
         console.error('푸시 알림 설정 실패:', error);
       }
@@ -143,6 +146,7 @@ export default function Timer() {
       if (me?.role === 'guest') {
         document.cookie =
           'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        sessionStorage.setItem('totalResultFrom', 'room');
         router.push(`/room/${room.code}/total-result`);
       } else {
         router.push(`/room/${room.code}/roulette?from=giveup`);
@@ -217,10 +221,12 @@ export default function Timer() {
       if (data.phase === 'result') {
         router.replace(`/room/${room.code}/semi-result`);
       } else if (data.phase === 'closed') {
+        sessionStorage.setItem('totalResultFrom', 'room');
         router.replace(`/room/${room.code}/total-result`);
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
+        sessionStorage.setItem('totalResultFrom', 'room');
         router.replace(`/room/${room.code}/total-result`);
       }
     } finally {

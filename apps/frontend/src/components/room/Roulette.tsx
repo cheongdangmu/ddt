@@ -151,12 +151,18 @@ export function Roulette() {
     }
   }, [queryClient]);
 
-  const moveToFinishTarget = useCallback(() => {
-    if (finishTarget === '/') {
-      clearGuestSession();
-    }
-    router.replace(finishTarget);
-  }, [clearGuestSession, finishTarget, router]);
+
+  const moveToFinishTarget = useCallback(
+    () => {
+      if (finishTarget === '/') {
+        clearGuestSession();
+      } else {
+        sessionStorage.setItem('totalResultFrom', 'room');
+      }
+      router.replace(finishTarget);
+    },
+    [clearGuestSession, finishTarget, router],
+  );
 
   const {
     data: result,
