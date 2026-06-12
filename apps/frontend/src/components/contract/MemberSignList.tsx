@@ -19,6 +19,8 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useShallow } from 'zustand/react/shallow';
 
+const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
 export default function MemberSignList() {
   const socket = useSocket();
   const me = useAuth().me;
@@ -88,6 +90,8 @@ export default function MemberSignList() {
                   alt={`${myNickname} 프로필 이미지`}
                   width={40}
                   height={40}
+                  placeholder='blur'
+                  blurDataURL={BLUR_PLACEHOLDER}
                   className={cn(
                     'rounded-full ring-3',
                     isMeSigned ? 'ring-success' : 'ring-white/40',
@@ -148,6 +152,8 @@ export default function MemberSignList() {
                           alt={m.nickname}
                           width={40}
                           height={40}
+                          placeholder='blur'
+                          blurDataURL={BLUR_PLACEHOLDER}
                           className={cn(
                             'rounded-full ring-3',
                             m.isSigned ? 'ring-success' : 'ring-white/40',
