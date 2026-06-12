@@ -578,7 +578,9 @@ export function Roulette() {
     if (isGiveUpRoulette) return;
     if (isResultLoading || !result) return;
     const shouldSkip =
-      (isExpired && remainingChances <= 0) || !hasRouletteItems;
+      (isExpired && remainingChances <= 0) ||
+      !hasRouletteItems ||
+      (!!myResult && totalChances === 0);
     if (shouldSkip && !isSpinning && history.length === 0) {
       moveToFinishTarget();
     }
@@ -591,6 +593,8 @@ export function Roulette() {
     hasRouletteItems,
     isSpinning,
     history.length,
+    myResult,
+    totalChances,
     moveToFinishTarget,
   ]);
   useEffect(() => {
