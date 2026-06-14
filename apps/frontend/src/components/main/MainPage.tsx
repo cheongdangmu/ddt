@@ -71,6 +71,11 @@ export const MainPage = () => {
     startTermsAgreementLogin(router.push);
   };
 
+  const handleLoginForCreateRoom = () => {
+    startTermsAgreementLogin(router.push, '/room');
+    setShowLoginDialog(false);
+  };
+
   const handleLogout = () => {
     logout();
   };
@@ -273,7 +278,7 @@ export const MainPage = () => {
               아니요
             </Button>
             <Button
-              onClick={handleOpenTerms}
+              onClick={handleLoginForCreateRoom}
               className='flex-1 h-12 rounded-lg font-bold'
             >
               로그인 하기
