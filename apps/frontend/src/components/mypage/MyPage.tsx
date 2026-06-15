@@ -148,7 +148,7 @@ export const MyPage = () => {
     () => [
       {
         label: '참여한 방',
-        value: `${stats.totalRoomCount}회`,
+        value: `${stats.totalRoomCount}개`,
         className: 'col-span-1 row-span-2 bg-[#1D1C2C]',
         icon: true,
       },
