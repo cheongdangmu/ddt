@@ -154,17 +154,14 @@ export const CreateRoom = () => {
   const { me, refetchMe } = useAuth();
   const isGuest = me?.role === 'guest';
 
-  const [shouldBlockBack, setShouldBlockBack] = useState(false);
-
-  useEffect(() => {
-    void Promise.resolve().then(() => {
-      const flag = sessionStorage.getItem('justLoggedIn');
-      if (flag === 'true') {
-        setShouldBlockBack(true);
-        sessionStorage.removeItem('justLoggedIn');
-      }
-    });
-  }, []);
+  const [shouldBlockBack] = useState(() => {
+    const flag = sessionStorage.getItem('justLoggedIn');
+    if (flag === 'true') {
+      sessionStorage.removeItem('justLoggedIn');
+      return true;
+    }
+    return false;
+  });
 
   useBlockBrowserBack({
     redirectTo: '/',
