@@ -8,6 +8,8 @@ import { HeaderTitle } from '@/components/layout/HeaderTitle';
 import { MobileLayout } from '@/components/layout/mobileLayout';
 import Loading from '@/components/ui/loading';
 import { Button } from '@/components/ui/button';
+import { CountableInput } from '@/components/common/CountableInput';
+import { PasswordInput } from '@/components/common/PasswordInput';
 import { FormInput } from '@/components/ui/form-input';
 import { Label } from '@/components/ui/label';
 import { ProfileImagePicker } from '@/components/common/ProfileImagePicker';
@@ -20,6 +22,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { getRoomApi } from '@/api/generated/room-api/room-api';
 import { toast } from 'sonner';
 import {
@@ -46,14 +49,20 @@ export const JoinRoom = () => {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
-  const { isLoggedIn, me, refetchMe } = useAuth();
+  const { isLoggedIn, me, refetchMe, isLoading: isAuthLoading } = useAuth();
 
   // 회원(로그인 사용자)이면 등록된 닉네임/프로필을 기본값으로 사용 (게스트는 빈 값)
   const isMember = isLoggedIn && me?.role === 'user';
   const defaultNickname = isMember ? (me?.nickname ?? '') : '';
 
-  // 게스트는 초기 프로필을 랜덤으로 1회만 부여한다. (재렌더마다 바뀌지 않게 useState 초기화)
-  const [guestRandomProfile] = useState(getRandomProfileIndex);
+  // 게스트는 초기 프로필을 랜덤으로 1회만 부여한다. SSR Hydration 방지를 위해 초기값 0.
+  const [guestRandomProfile, setGuestRandomProfile] = useState(0);
+
+  useEffect(() => {
+    if (!isMember) {
+      setGuestRandomProfile(getRandomProfileIndex());
+    }
+  }, [isMember]);
 
   const defaultProfile = (() => {
     if (!isMember) return guestRandomProfile;
@@ -68,7 +77,6 @@ export const JoinRoom = () => {
   const [nicknameInput, setNicknameInput] = useState<string | null>(null);
   const [profileInput, setProfileInput] = useState<number | null>(null);
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [dialogDismissed, setDialogDismissed] = useState(false);
 
   const nickname = nicknameInput ?? defaultNickname;
@@ -108,30 +116,24 @@ export const JoinRoom = () => {
 
   const isValid =
     nickname.trim().length > 0 &&
-    (isHost || (password.length >= 4 && password.length <= 20));
+    (isHost || (password.length >= 4 && password.length <= 12));
 
-  // 진입 시 방 상태별 처리. 메시지는 백엔드 join 에러 문구에 맞춘다.
-  const enteredHandledRef = useRef(false);
+  // 방이 폭파되거나 없는 방이 된 경우 언제든지 메인으로 튕겨냄
   useEffect(() => {
-    if (enteredHandledRef.current) {
-      return;
-    }
-
-    // closed·없는 방은 find가 같은 404를 던져 구분 불가 → 통합 문구로 안내.
     if (isRoomInvalid) {
-      enteredHandledRef.current = true;
       toast.error('존재하지 않거나 종료된 방이에요.');
       router.replace('/');
-      return;
     }
+  }, [isRoomInvalid, router]);
 
-    if (!room) {
-      return;
-    }
+  // 진입 시 방 상태별 처리. 메시지는 백엔드 join 에러 문구에 맞춘다.
+  const initialCheckRef = useRef(false);
+  useEffect(() => {
+    if (initialCheckRef.current || !room) return;
 
     // result: 멤버 구분 불가(getMyActiveRoom이 제외) → 모두 차단.
     if (room.phase === 'result') {
-      enteredHandledRef.current = true;
+      initialCheckRef.current = true;
       toast.error('종료된 방입니다.');
       router.replace('/');
       return;
@@ -143,7 +145,7 @@ export const JoinRoom = () => {
       if (isLoggedIn && !isMyActiveFetched) {
         return;
       }
-      enteredHandledRef.current = true;
+      initialCheckRef.current = true;
       if (isLoggedIn && myActiveRoom?.code === code) {
         router.replace(`/room/${code}/timer`);
       } else {
@@ -151,15 +153,7 @@ export const JoinRoom = () => {
         router.replace('/');
       }
     }
-  }, [
-    isRoomInvalid,
-    room,
-    isLoggedIn,
-    myActiveRoom,
-    isMyActiveFetched,
-    code,
-    router,
-  ]);
+  }, [room, isLoggedIn, myActiveRoom, isMyActiveFetched, code, router]);
 
   const handleGoogleLogin = () => {
     startTermsAgreementLogin(router.push);
@@ -178,6 +172,11 @@ export const JoinRoom = () => {
       router.push(`/room/${code}/contract`);
     },
     onError: (err) => {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        toast.error('존재하지 않거나 폭파된 방이에요.');
+        router.replace('/');
+        return;
+      }
       toast.error(getErrorMessage(err, '입장 실패'));
     },
   });
@@ -211,6 +210,7 @@ export const JoinRoom = () => {
   if (
     isRoomLoading ||
     isRoomInvalid ||
+    isAuthLoading ||
     room?.phase === 'timer' ||
     room?.phase === 'result'
   ) {
@@ -272,57 +272,24 @@ export const JoinRoom = () => {
             handleSubmit();
           }}
         >
-          {/* 닉네임 */}
-          <div className='flex flex-col gap-2'>
-            <Label className='text-[15px] font-bold text-white/85'>
-              내 닉네임
-            </Label>
-            <FormInput
-              type='text'
-              placeholder='방에서 사용할 닉네임을 입력해주세요.'
-              maxLength={10}
-              value={nickname}
-              onChange={(e) => setNicknameInput(e.target.value)}
-            />
-            <span className='text-xs text-[#6B7280] text-right'>
-              {nickname.length}/10
-            </span>
-          </div>
+          <CountableInput
+            label='내 닉네임'
+            placeholder='방에서 사용할 닉네임을 입력해주세요.'
+            maxLength={10}
+            value={nickname}
+            onChange={setNicknameInput}
+          />
 
           <ProfileImagePicker
             selectedProfile={selectedProfile}
             onSelectProfile={setProfileInput}
           />
 
-          {/* 비밀번호 */}
           {!isHost && (
-            <div className='flex flex-col gap-2'>
-              <Label className='text-[15px] font-bold text-white/85'>
-                방 비밀번호
-              </Label>
-              <div className='relative flex items-center'>
-                <FormInput
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder='비밀번호를 입력해주세요.'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className='pr-10'
-                />
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label='비밀번호 표시'
-                  className='absolute right-1 text-[#6B7280] hover:text-white/75 hover:bg-transparent'
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </Button>
-              </div>
-              <span className='text-xs text-[#6B7280] pl-0.5'>
-                · 비밀번호는 4~12자이어야 해요.
-              </span>
-            </div>
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
+            />
           )}
         </form>
       </MobileLayout>

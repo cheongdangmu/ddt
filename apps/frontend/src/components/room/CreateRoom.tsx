@@ -11,6 +11,8 @@ import { MobileLayout } from '@/components/layout/mobileLayout';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Label } from '@/components/ui/label';
+import { CountableInput } from '@/components/common/CountableInput';
+import { PasswordInput } from '@/components/common/PasswordInput';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useConfirm } from '@/hooks/useConfirm';
 import { getRoomApi } from '@/api/generated/room-api/room-api';
@@ -148,6 +150,7 @@ export const CreateRoom = () => {
   const isGuest = me?.role === 'guest';
 
   const [shouldBlockBack] = useState(() => {
+    if (typeof window === 'undefined') return false;
     const flag = sessionStorage.getItem('justLoggedIn');
     if (flag === 'true') {
       sessionStorage.removeItem('justLoggedIn');
@@ -177,7 +180,6 @@ export const CreateRoom = () => {
   const [roomName, setRoomName] = useState('');
   const [password, setPassword] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const { confirm, confirmProps } = useConfirm();
   const { room: activeRoom } = useActiveRoom();
 
@@ -381,49 +383,18 @@ export const CreateRoom = () => {
                 handleSubmit();
               }}
             >
-              <div className='flex flex-col gap-2'>
-                <Label className='text-[15px] font-bold text-white/85'>
-                  방 이름
-                </Label>
-                <FormInput
-                  type='text'
-                  placeholder='방 이름을 입력해주세요.'
-                  maxLength={20}
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                />
-                <span className='text-xs text-[#6B7280] text-right'>
-                  {roomName.length}/20
-                </span>
-              </div>
+              <CountableInput
+                label='방 이름'
+                placeholder='방 이름을 입력해주세요.'
+                maxLength={20}
+                value={roomName}
+                onChange={setRoomName}
+              />
 
-              <div className='flex flex-col gap-2'>
-                <Label className='text-[15px] font-bold text-white/85'>
-                  비밀번호
-                </Label>
-                <div className='relative flex items-center'>
-                  <FormInput
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder='비밀번호를 입력해주세요.'
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className='pr-10'
-                  />
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label='비밀번호 표시'
-                    className='absolute right-1 text-[#6B7280] hover:text-white/75 hover:bg-transparent'
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </Button>
-                </div>
-                <span className='text-xs text-[#6B7280] pl-0.5'>
-                  · 비밀번호는 4~12자이어야 해요.
-                </span>
-              </div>
+              <PasswordInput
+                value={password}
+                onChange={setPassword}
+              />
             </form>
           </>
         )}
