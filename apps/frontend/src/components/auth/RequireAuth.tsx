@@ -19,7 +19,7 @@ interface RequireAuthProps {
 export function RequireAuth({
   children,
   redirectTo = '/',
-  message = '로그인하고 바로 이어가세요.',
+  message = '로그인이 필요해요.',
   loadingVariant = 'overlay',
 }: RequireAuthProps) {
   const router = useRouter();
