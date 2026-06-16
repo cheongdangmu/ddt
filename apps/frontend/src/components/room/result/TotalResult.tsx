@@ -71,7 +71,6 @@ export function TotalResult() {
       ),
     [result?.members],
   );
-  const isSolo = rankedMembers.length <= 1;
   const isLoggedInUser = me?.role === 'user';
   const totalTime = formatSessionTime(result?.totalSessionMs ?? null);
   const completedSessions = result?.rule
@@ -206,10 +205,9 @@ export function TotalResult() {
               <RankingSection
                 members={rankedMembers}
                 me={me}
-                isSolo={isSolo}
                 showEscapeTime
               />
-              <PenaltySection members={rankedMembers} me={me} isSolo={isSolo} />
+              <PenaltySection members={rankedMembers} me={me} />
             </>
           )}
         </div>
