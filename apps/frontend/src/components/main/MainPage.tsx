@@ -74,7 +74,7 @@ export const MainPage = () => {
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [roomCode, setRoomCode] = useState('');
-  const { room: activeRoom } = useActiveRoom();
+  const { room: activeRoom, isLoading: isRoomLoading } = useActiveRoom();
 
   const handleRestore = () => {
     if (!activeRoom) return;
@@ -172,7 +172,6 @@ export const MainPage = () => {
           width={160}
           height={81}
           priority
-          placeholder='blur'
         />
 
         <p className='mt-7 text-[26px] font-bold leading-snug'>
@@ -183,13 +182,26 @@ export const MainPage = () => {
           집중한다.
         </p>
 
-        <span className='mt-5 inline-block w-fit rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-white/75 '>
-          서명하고 집중하고 벌칙으로 마무리한다.
+        <span className='relative mt-5 inline-block w-fit'>
+          {/* 슬로건 뒤에 겹쳐 깔리는 black/10 배경 박스 (z축 한 단계 아래) */}
+          <span
+            aria-hidden='true'
+            className='absolute inset-0 rounded-md bg-black/40'
+          />
+          <span className='relative z-10 inline-block rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-white/75'>
+            서명하고 집중하고 벌칙으로 마무리한다.
+          </span>
         </span>
 
         <div className='flex-1' />
 
-        {activeRoom ? (
+        {isLoading || isRoomLoading ? (
+          <div className='flex w-full flex-col gap-3'>
+            <div className='flex items-center justify-center h-[140px]'>
+              <div className='size-8 animate-spin rounded-full border-4 border-white/20 border-t-white' />
+            </div>
+          </div>
+        ) : activeRoom ? (
           <div className='flex w-full flex-col gap-3'>
             <div className='grid grid-cols-2 gap-2'>
               <StatBox

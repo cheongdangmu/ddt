@@ -12,6 +12,7 @@ export type HistoryItem = {
   penaltyTier: number;
   memberCount: number;
   endedAt: string;
+  gaveUp?: boolean;
 };
 
 /**
@@ -70,6 +71,10 @@ export const MyPageHistoryList = ({
   const handleClick = () => {
     if (from) {
       sessionStorage.setItem('totalResultFrom', from);
+      // 전체 참여 기록 → 통합결과 진입일 때만, 복귀 시 스크롤 복원용 1회성 플래그를 남긴다
+      if (from === 'mypage-history') {
+        sessionStorage.setItem('mypageHistoryScrollRestore', '1');
+      }
     }
   };
 
@@ -109,6 +114,12 @@ export const MyPageHistoryList = ({
                 >
                   내 이탈 {formatDuration(item.totalEscapeMs)}
                 </span>
+                {item.gaveUp && (
+                  <>
+                    <span className='ml-2 text-[10px]'>|</span>
+                    <span className='ml-2 text-destructive'>탈옥</span>
+                  </>
+                )}
               </p>
             </div>
             <ChevronRight
