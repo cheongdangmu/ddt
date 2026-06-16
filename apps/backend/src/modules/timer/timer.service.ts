@@ -43,6 +43,13 @@ type RoomStateMembers = Record<
 >;
 type UnsignedSummary = { hostUnsigned: boolean; memberIds: string[] };
 
+/**
+ * 서명하지 않은 멤버 정보를 Redis 방 상태에서 추출합니다.
+ * 강제 시작 시 미서명 멤버 강퇴 대상을 결정하는 데 사용됩니다.
+ *
+ * @param rawState - Redis에서 읽은 JSON 문자열
+ * @returns 호스트 미서명 여부 + 미서명 멤버 ID 목록
+ */
 function extractUnsignedSummary(rawState: string | null): UnsignedSummary {
   if (!rawState) return { hostUnsigned: false, memberIds: [] };
   const state = JSON.parse(rawState) as { members?: RoomStateMembers };
@@ -75,6 +82,15 @@ export class TimerService implements OnModuleInit {
     private readonly pushService: PushNotificationService, // ✅ 푸시 서비스 주입
   ) {}
 
+  /**
+   * 푸시 구독 정보를 저장합니다.
+   * PushNotificationService.saveSubscription의 공개 래퍼입니다.
+   *
+   * @param roomCode - 방 코드
+   * @param userId - 유저 ID
+   * @param data - 구독 데이터 (web: PushSubscription, android: SNS endpoint)
+   * @param platform - 플랫폼 ('web' | 'android')
+   */
   async savePushSubscription(
     roomCode: string,
     userId: string,
@@ -84,6 +100,15 @@ export class TimerService implements OnModuleInit {
     await this.pushService.saveSubscription(roomCode, userId, data, platform);
   }
 
+  /**
+   * 요청자가 해당 방의 방장인지 검증합니다.
+   *
+   * @param roomCode - 방 코드
+   * @param userId - 요청자 ID
+   * @returns 방 정보 (code, hostId, phase)
+   * @throws NotFoundException 방이 없을 때
+   * @throws ForbiddenException 방장이 아닐 때
+   */
   private async verifyHost(roomCode: string, userId: string) {
     const room = await this.timerRepository.findRoomForVerify(roomCode);
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다.');
@@ -92,6 +117,13 @@ export class TimerService implements OnModuleInit {
     return room;
   }
 
+  /**
+   * 세션 템플릿으로부터 총 세션 시간(밀리초)을 계산합니다.
+   * (집중 × 라운드 + 휴식 × (라운드-1)) × 60 × 1000
+   *
+   * @param template - 세션 템플릿 (focusMin, breakMin, rounds)
+   * @returns 총 세션 시간 (밀리초)
+   */
   private getSessionDurationMs(template: SessionTemplate) {
     return (
       (template.focusMin * template.rounds +
@@ -101,6 +133,13 @@ export class TimerService implements OnModuleInit {
     );
   }
 
+  /**
+   * 현재 페이즈가 contract인지 검증합니다.
+   * 타이머 시작은 각서 단계에서만 가능합니다.
+   *
+   * @param phase - 현재 방 페이즈
+   * @throws HttpException (423 LOCKED) contract가 아닌 경우
+   */
   private ensureContractPhase(phase: string) {
     if (phase !== 'contract') {
       throw new HttpException(
@@ -110,6 +149,14 @@ export class TimerService implements OnModuleInit {
     }
   }
 
+  /**
+   * 멤버 강퇴를 최대 KICK_MAX_RETRIES회 재시도합니다.
+   * 동시성 문제로 강퇴가 실패할 수 있어 재시도 로직을 적용합니다.
+   *
+   * @param roomCode - 방 코드
+   * @param targetId - 강퇴 대상 ID
+   * @throws 마지막 재시도 실패 시 원본 에러를 throw
+   */
   private async kickWithRetry(
     roomCode: string,
     targetId: string,
@@ -421,6 +468,15 @@ export class TimerService implements OnModuleInit {
     this.roomGateway.server.to(roomCode).emit('break:warning');
   }
 
+  /**
+   * Redis에서 미서명 멤버 정보를 로드합니다.
+   * 방장이 미서명이면 즉시 예외를 던집니다.
+   *
+   * @param roomCode - 방 코드
+   * @returns 미서명 멤버 요약 (hostUnsigned, memberIds)
+   * @throws ConflictException 방 상태 조회 실패 시
+   * @throws BadRequestException 방장이 미서명 시
+   */
   private async loadSignState(roomCode: string): Promise<UnsignedSummary> {
     const rawState = await this.timerRepository.getRoomStateRaw(roomCode);
     if (!rawState) throw new ConflictException('방 상태를 확인할 수 없습니다.');
@@ -432,12 +488,28 @@ export class TimerService implements OnModuleInit {
     return summary;
   }
 
+  /**
+   * 방의 세션 템플릿을 로드합니다.
+   *
+   * @param roomCode - 방 코드
+   * @returns 세션 템플릿 (focusMin, breakMin, rounds 등)
+   * @throws NotFoundException 각서가 없을 때
+   */
   private async loadRoomTemplate(roomCode: string) {
     const room = await this.timerRepository.findRoomWithTemplate(roomCode);
     if (!room?.template) throw new NotFoundException('각서가 없습니다.');
     return room.template;
   }
 
+  /**
+   * 세션을 실제로 시작합니다.
+   * DB 페이즈 전환 → Redis 반영 → BullMQ 잡 스케줄링 → Y.Doc 정리 → 클라이언트 알림
+   *
+   * @param roomCode - 방 코드
+   * @param template - 세션 템플릿
+   * @param extra - 추가 데이터 (kickedMemberIds: 강제 시작 시 강퇴된 멤버 목록)
+   * @returns 세션 시작 응답 데이터 (startedAt, focusMin, breakMin 등)
+   */
   private async beginSession(
     roomCode: string,
     template: SessionTemplate,
@@ -467,6 +539,13 @@ export class TimerService implements OnModuleInit {
     return responseData;
   }
 
+  /**
+   * 중도포기자의 벌칙을 산정합니다.
+   * 실패해도 세션 흐름을 중단하지 않도록 에러를 Sentry로 보고하고 무시합니다.
+   *
+   * @param roomCode - 방 코드
+   * @param memberId - RoomMember ID
+   */
   private async safeCalculateForGiveUp(
     roomCode: string,
     memberId: string,
@@ -580,6 +659,12 @@ export class TimerService implements OnModuleInit {
       .emit('escape:summary', { members: summary });
   }
 
+  /**
+   * 'room.closed' 이벤트 핸들러.
+   * 방이 삭제되면 해당 방의 모든 BullMQ 잡(end, break, reveal)을 취소합니다.
+   *
+   * @param payload - { roomCode: 삭제된 방 코드 }
+   */
   @OnEvent('room.closed')
   async handleRoomClosed(payload: { roomCode: string }) {
     await this.cancelSessionJobs(payload.roomCode);
