@@ -88,6 +88,13 @@ const ContractForm = () => {
     applyAll,
   } = useYjsContract(room.code, yjsEnabled, isHost);
 
+  // 언마운트 시 ContractForm에서 활성화한 NoSleep 정리
+  useEffect(() => {
+    return () => {
+      noSleepRef.current?.disable();
+    };
+  }, []);
+
   const { confirm, confirmProps } = useConfirm();
 
   const methods = useForm<ContractFormValues>({
