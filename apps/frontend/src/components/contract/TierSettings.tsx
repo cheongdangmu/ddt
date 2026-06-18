@@ -15,7 +15,7 @@ import { useRoomStore } from '@/store/useRoomStore';
 import { Tier, UseContractYjsReturn } from '@/types/yjs';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/useAuth';
-import { blockNonInteger } from './utils';
+import { blockNonInteger, blurOnEnter } from './utils';
 
 interface TierSettingsProps {
   yjs: Pick<
@@ -78,13 +78,17 @@ function PenaltyCountInput({
       min={0}
       step={1}
       value={draft}
+      autoComplete='off'
       disabled={disabled}
       onFocus={() => {
         isEditingRef.current = true;
         setDraft('');
         onFocus();
       }}
-      onKeyDown={blockNonInteger}
+      onKeyDown={(e) => {
+        blockNonInteger(e);
+        blurOnEnter(e);
+      }}
       onChange={(e) => {
         const raw = e.target.value;
         setDraft(raw);
@@ -153,13 +157,17 @@ function TierPctInput({
       max={99}
       step={1}
       value={draft}
+      autoComplete='off'
       disabled={disabled}
       onFocus={() => {
         isEditingRef.current = true;
         setDraft('');
         onFocus();
       }}
-      onKeyDown={blockNonInteger}
+      onKeyDown={(e) => {
+        blockNonInteger(e);
+        blurOnEnter(e);
+      }}
       onChange={(e) => {
         const raw = e.target.value;
         setDraft(raw);

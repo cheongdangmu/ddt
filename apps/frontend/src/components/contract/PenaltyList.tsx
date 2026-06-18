@@ -97,6 +97,12 @@ const PenaltyInput = forwardRef<HTMLInputElement, PenaltyInputProps>(
             onUpdate(val); // 한글 조합 중 아닐 때만 Yjs 동기화
           }
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
         onBlur={(e) => {
           setIsFocused(false);
           isEditingRef.current = false;
@@ -204,6 +210,7 @@ export default function PenaltyList({ yjs }: PenaltyListProps) {
                     />
                     {canEdit && (
                       <Button
+                        type='button'
                         variant='ghost'
                         size='icon'
                         aria-label={`${i + 1}번째 벌칙 삭제`}

@@ -11,3 +11,18 @@ export function blockNonInteger(
     e.preventDefault();
   }
 }
+
+/**
+ * Enter 키 입력 시 해당 input에서 포커스를 제거합니다.
+ * 모바일에서 소프트 키보드가 내려가는 효과를 냅니다.
+ *
+ * @param e - 키보드 이벤트
+ */
+export function blurOnEnter(
+  e: React.KeyboardEvent<HTMLInputElement>,
+): void {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    (e.target as HTMLInputElement).blur();
+  }
+}
