@@ -15,6 +15,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { queryKeys } from '@/lib/queryKeys';
+import { blurOnEnter } from './utils';
 
 interface SaveContractDialogProps {
   open: boolean;
@@ -100,7 +101,9 @@ export function SaveContractDialog({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={TITLE_MAX_LENGTH}
+          autoComplete='off'
           className='bg-background! h-12 w-full border border-white/20 rounded-sm!'
+          onKeyDown={blurOnEnter}
         />
         <div className='flex items-center justify-between gap-2'>
           <DialogDescription
