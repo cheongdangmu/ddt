@@ -118,13 +118,20 @@ export function useRouletteLogic(code: string, isGiveUpRoulette: boolean) {
 
   // ── Navigation ──
   const moveToFinishTarget = useCallback(() => {
+    if (isGiveUpRoulette) {
+      data.exitMutation.mutate(undefined, {
+        onError: () => {
+          // 이미 공개됨(400/409) 또는 네트워크 실패 — 무시 (백업 잡 존재)
+        },
+      });
+    }
     if (finishTarget === '/') {
       data.clearGuestSession();
     } else {
       setResultFrom('room');
     }
     router.replace(finishTarget);
-  }, [data, finishTarget, router]);
+  }, [data, finishTarget, isGiveUpRoulette, router]);
 
   // ── Handlers ──
   const handleStartSpinning = useCallback(
