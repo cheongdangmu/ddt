@@ -41,10 +41,34 @@ export default function RootLayout({
       lang='ko'
       className={`${notoSansKR.variable} h-full antialiased dark`}
     >
-      <body className='min-h-full flex justify-center bg-background sm:bg-zinc-500'>
+      <body
+        /* h-full로 통일하여 정확한 100% 높이를 잡고 중복 배경색 클래스를 제거했습니다. */
+        className='h-full w-full overflow-hidden flex justify-center sm:bg-zinc-500'
+        style={{
+          backgroundColor: '#09090b',
+          backgroundImage: "url('/images/fullBackground.webp')",
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+        }}
+      >
         <Providers>
-          <div className='relative w-full sm:max-w-97.5 min-h-dvh flex flex-col bg-background sm:border-x sm:border-border sm:shadow-[0_0_40px_rgba(0,0,0,0.6)]'>
-            {children}
+          {/* [스마트폰 바깥쪽 케이스 틀] */}
+          {/* h-screen 대신 h-full을 사용하여 body 구조와 싱크를 맞췄습니다. */}
+          <div className='relative flex h-full w-full flex-col bg-background box-border sm:mx-auto sm:w-[min(92vw,420px)] sm:rounded-[44px] sm:border sm:border-white/80 sm:bg-zinc-950 sm:p-2 sm:shadow-[0_0_0_1px_rgba(255,255,255,0.35),0_24px_70px_rgba(0,0,0,0.65)] sm:ring-1 sm:ring-white/40'>
+            
+            {/* [스마트폰 안쪽 액정 화면] */}
+            {/* 굳이 필요 없는 relative와 w-full 중복을 다듬어 가독성을 높였습니다. */}
+            <div className='flex flex-1 min-h-0 flex-col overflow-hidden rounded-[36px] bg-background sm:border sm:border-white/50 sm:shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'>
+              
+              {/* [실제 내부 스크롤 콘텐츠 영역] */}
+              <div className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden'>
+                {children}
+              </div>
+
+            </div>
+
           </div>
         </Providers>
       </body>
