@@ -251,12 +251,23 @@
   }
 }
 
-/* 글로벌 스크롤바 숨기기 (앱 고유 레이아웃 유지) */
-html, body {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-html::-webkit-scrollbar, body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+/* 1. 글로벌 단위에서 모든 스크롤바 메커니즘을 숨깁니다 */
+html, body, div {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }
 
+/* 2. Webkit(크롬, 사파리, 엣지, 웨일 등) 엔진의 스크롤바 영역을 강제로 0으로 압축 */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
