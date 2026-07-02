@@ -63,7 +63,7 @@ export default function RootLayout({
             <div className='flex flex-1 min-h-0 flex-col overflow-hidden rounded-[36px] bg-background sm:border sm:border-white/50 sm:shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'>
               
               {/* [실제 내부 스크롤 콘텐츠 영역] */}
-              <div className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden'>
+              <div className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none'>
                 {children}
               </div>
 
