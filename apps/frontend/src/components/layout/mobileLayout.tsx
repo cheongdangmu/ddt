@@ -24,7 +24,7 @@ export const MobileLayout = ({
   bottomFloating = false,
 }: MobileLayoutProps) => {
   return (
-    <div className='relative flex h-full flex-col overflow-x-clip'>
+    <div className='relative flex min-h-dvh md:min-h-0 md:h-full flex-col overflow-x-clip'>
       {/* sticky: 부모 컨테이너 흐름 안에 있어, 모달 열림 시 스크롤바 변화로 헤더가 틀어지지 않는다 */}
       <header className='sticky top-0 z-50 flex h-14.5 shrink-0 items-center border-b border-border bg-background px-4'>
         {header}

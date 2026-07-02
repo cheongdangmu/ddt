@@ -102,7 +102,7 @@ export const MainPage = () => {
   };
 
   return (
-    <div className='relative h-full w-full overflow-hidden text-white '>
+    <div className='relative min-h-dvh md:min-h-0 md:h-full w-full overflow-hidden text-white '>
       <Image
         src={bgMain}
         alt=''
